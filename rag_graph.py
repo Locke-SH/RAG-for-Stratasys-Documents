@@ -43,7 +43,7 @@ OR_TITLE = os.getenv("OR_TITLE", "PDF-RAG-Chat")
 MODEL_NAME = os.getenv("OPENROUTER_MODEL", "mistralai/mistral-medium")
 DB_DIR = os.getenv("DB_DIR", "db")
 K = int(os.getenv("RETRIEVAL_K", "4"))
-TEMPERATURE = float(os.getenv("TEMPERATURE", "0"))
+TEMPERATURE = float(os.getenv("TEMPERATURE", "0.3"))
 
 # ---------------------------------------------------------------------------
 # LangGraph state
@@ -60,13 +60,14 @@ class RAGPipeline:
     """Retrieval-augmented generation wrapped in a LangGraph state machine."""
 
     PROMPT = PromptTemplate.from_template(
-        """Du bist ein Experte für technische Dokumente. Beantworte ausschließlich mithilfe des Kontexts.
+        """Du bist ein hilfsreicher Experte für technische Dokumente. Beantworte die Frage ausführlich und detailliert basierend auf dem gegebenen Kontext.
 
 Kontext:
 {context}
 
 Frage: {question}
-Antwort (Deutsch, prägnant):"""
+
+Antwort: Gib eine vollständige und detaillierte Antwort auf Deutsch. Erkläre alle relevanten Aspekte und verwende konkrete Informationen aus dem Kontext."""
     )
 
     def __init__(
