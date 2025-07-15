@@ -121,24 +121,38 @@ with col2:
             with open(pdf_path, "rb") as f:
                 pdf_bytes = f.read()
             
-            # Display PDF using Streamlit's built-in method
+            # Display PDF using embedded viewer
             st.write("**PDF Dokument:**")
+            st.write(f"📄 **{st.session_state.selected_collection}.pdf**")
             
-            # Try to display PDF directly
-            try:
-                # Use Streamlit's experimental PDF viewer
-                st.write(f"📄 **{st.session_state.selected_collection}.pdf**")
-                
-                # Create a download link that opens in new tab for viewing
-                pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-                pdf_link = f'<a href="data:application/pdf;base64,{pdf_base64}" target="_blank">🔍 PDF in neuem Tab öffnen</a>'
-                st.markdown(pdf_link, unsafe_allow_html=True)
-                
-                # Show PDF info
-                st.write(f"**Dateigröße:** {len(pdf_bytes) / 1024:.1f} KB")
-                
-            except Exception as e:
-                st.error(f"Fehler beim Anzeigen des PDFs: {e}")
+            # Encode PDF to base64 for embedding
+            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+            
+            # Create embedded PDF viewer with better compatibility
+            pdf_display = f"""
+            <div style="width:100%; height:600px; border:1px solid #ccc; border-radius:5px; overflow:hidden;">
+                <object data="data:application/pdf;base64,{pdf_base64}" 
+                        type="application/pdf" 
+                        width="100%" 
+                        height="100%">
+                    <embed src="data:application/pdf;base64,{pdf_base64}" 
+                           type="application/pdf" 
+                           width="100%" 
+                           height="100%">
+                        <p>Ihr Browser unterstützt keine PDF-Anzeige. 
+                           <a href="data:application/pdf;base64,{pdf_base64}" target="_blank">
+                           Klicken Sie hier, um das PDF in einem neuen Tab zu öffnen.
+                           </a>
+                        </p>
+                    </embed>
+                </object>
+            </div>
+            """
+            
+            st.markdown(pdf_display, unsafe_allow_html=True)
+            
+            # Show PDF info
+            st.write(f"**Dateigröße:** {len(pdf_bytes) / 1024:.1f} KB")
             
             # Download button
             st.download_button(
@@ -148,8 +162,9 @@ with col2:
                 mime="application/pdf"
             )
             
-            # Alternative: Show first few pages as images (requires additional dependencies)
-            st.info("💡 Tipp: Klicken Sie auf 'PDF in neuem Tab öffnen' um das Dokument zu betrachten.")
+            # Fallback link for browsers that don't support embedded PDFs
+            pdf_link = f'<a href="data:application/pdf;base64,{pdf_base64}" target="_blank" style="color: #1f77b4; text-decoration: none;">🔍 PDF in neuem Tab öffnen (falls nicht sichtbar)</a>'
+            st.markdown(pdf_link, unsafe_allow_html=True)
             
         else:
             st.warning("PDF-Datei nicht gefunden. Das Dokument wurde möglicherweise vor der PDF-Speicher-Funktion hochgeladen.")
