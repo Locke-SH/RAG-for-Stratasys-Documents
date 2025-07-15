@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import streamlit as st
-import base64
+from streamlit_pdf_viewer import pdf_viewer
 
 from ingest_docs import DocumentIngestor
 from rag_graph import RAGPipeline
@@ -121,24 +121,17 @@ with col2:
             with open(pdf_path, "rb") as f:
                 pdf_bytes = f.read()
             
-            # Display PDF using embedded viewer
+            # Display PDF using streamlit-pdf-viewer
             st.write("**PDF Dokument:**")
             st.write(f"📄 **{st.session_state.selected_collection}.pdf**")
             
-            # Encode PDF to base64 for embedding
-            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-            
-            # Display PDF using base64 embedding (most reliable method)
-            pdf_display = f"""
-            <div style="width:100%; height:600px; border:1px solid #ccc; border-radius:5px; overflow:hidden;">
-                <iframe src="data:application/pdf;base64,{pdf_base64}" 
-                        width="100%" 
-                        height="100%" 
-                        style="border:none;">
-                </iframe>
-            </div>
-            """
-            st.markdown(pdf_display, unsafe_allow_html=True)
+            # Use streamlit-pdf-viewer for better PDF display
+            pdf_viewer(
+                input=pdf_bytes,
+                width=700,
+                height=600,
+                key=f"pdf_viewer_{st.session_state.selected_collection}"
+            )
             
             # Show PDF info
             st.write(f"**Dateigröße:** {len(pdf_bytes) / 1024:.1f} KB")
@@ -150,10 +143,6 @@ with col2:
                 file_name=f"{st.session_state.selected_collection}.pdf",
                 mime="application/pdf"
             )
-            
-            # Fallback link for browsers that don't support embedded PDFs
-            pdf_link = f'<a href="data:application/pdf;base64,{pdf_base64}" target="_blank" style="color: #1f77b4; text-decoration: none;">🔍 PDF in neuem Tab öffnen (falls nicht sichtbar)</a>'
-            st.markdown(pdf_link, unsafe_allow_html=True)
             
         else:
             st.warning("PDF-Datei nicht gefunden. Das Dokument wurde möglicherweise vor der PDF-Speicher-Funktion hochgeladen.")
