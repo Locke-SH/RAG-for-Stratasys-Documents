@@ -4,10 +4,10 @@ import argparse, os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from langchain.embeddings import HuggingFaceEmbeddings       # <—
-from langchain.document_loaders import PyPDFLoader
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 
 load_dotenv()
 
@@ -22,14 +22,14 @@ class DocumentIngestor:
         self._splitter = RecursiveCharacterTextSplitter(chunk_size=cs,
                                                         chunk_overlap=co,
                                                         separators=["\n\n", "\n", " ", ""])
-        self._embedding = HuggingFaceEmbeddings(model_name=model_name)    # <—
+        self._embedding = HuggingFaceEmbeddings(model_name=model_name)
 
     def ingest(self, pdf: str | Path, collection: str | None = None) -> int:
         docs = PyPDFLoader(str(pdf)).load()
         chunks = self._splitter.split_documents(docs)
         Chroma.from_documents(chunks, self._embedding,
                               persist_directory=str(self.persist_dir),
-                              collection_name=collection).persist()
+                              collection_name=collection)
         return len(chunks)
 
 
