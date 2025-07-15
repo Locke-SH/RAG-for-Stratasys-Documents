@@ -142,12 +142,15 @@ with col2:
             st.write(f"📄 **{st.session_state.selected_collection}.pdf**")
             
             # Use streamlit-pdf-viewer for better PDF display
+            # Force re-render by changing key when page changes
+            viewer_key = f"pdf_viewer_{st.session_state.selected_collection}_page_{st.session_state.pdf_page}"
+            
             pdf_viewer(
                 input=pdf_bytes,
                 width=700,
                 height=600,
-                key=f"pdf_viewer_{st.session_state.selected_collection}_{st.session_state.pdf_page}",
-                pages_to_render=[st.session_state.pdf_page] if st.session_state.pdf_page else list(range(1, 10)),
+                key=viewer_key,
+                pages_to_render=[st.session_state.pdf_page],  # Only render current page
                 render_text=True
             )
             
