@@ -1,20 +1,3 @@
-# -*- coding: utf-8 -*-
-"""rag_graph.py – LangGraph RAG pipeline using OpenRouter
-
-Import-Beispiel:
-    from rag_graph import RAGPipeline, answer
-    print(answer("Was ist additive Fertigung?"))
-
-Umgebungsvariablen (.env oder Shell):
-    OPENROUTER_API_KEY   required
-    OPENROUTER_BASE_URL  default https://openrouter.ai/api/v1
-    HTTP_REFERER         required by OpenRouter (e.g. https://your-app.com)
-    OR_TITLE             short app name (default PDF-RAG-Chat)
-    OPENROUTER_MODEL     default mistralai/mistral-medium
-    DB_DIR               default ./db
-    RETRIEVAL_K          default 4
-    TEMPERATURE          default 0.0
-"""
 from __future__ import annotations
 
 import os
@@ -31,21 +14,18 @@ from langchain_openai import ChatOpenAI
 
 load_dotenv()
 
-# ---------------------------------------------------------------------------
 # Environment
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
 if not OPENROUTER_API_KEY:
     raise EnvironmentError("OPENROUTER_API_KEY (or OPENAI_API_KEY) is missing")
 
 OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-HTTP_REFERER = os.getenv("HTTP_REFERER", "https://your-app.com")
-OR_TITLE = os.getenv("OR_TITLE", "PDF-RAG-Chat")
 MODEL_NAME = os.getenv("OPENROUTER_MODEL", "mistralai/mistral-medium")
 DB_DIR = os.getenv("DB_DIR", "db")
 K = int(os.getenv("RETRIEVAL_K", "4"))
 TEMPERATURE = float(os.getenv("TEMPERATURE", "0.3"))
 
-# ---------------------------------------------------------------------------
+
 # LangGraph state
 @dataclass
 class QAState:
@@ -55,7 +35,6 @@ class QAState:
     answer: Optional[str] = None
 
 
-# ---------------------------------------------------------------------------
 # RAGPipeline class
 class RAGPipeline:
     """Retrieval-augmented generation wrapped in a LangGraph state machine."""
@@ -96,16 +75,12 @@ Antwort: Gib eine vollständige und detaillierte Antwort auf Deutsch. Erkläre a
             model_name=model_name,
             openai_api_key=OPENROUTER_API_KEY,
             openai_api_base=OPENROUTER_BASE_URL,
-            default_headers={
-                "HTTP-Referer": HTTP_REFERER,
-                "X-Title": OR_TITLE,
-            },
             temperature=temperature,
             request_timeout=90,
         )
         self._graph = self._build_graph()
 
-    # ------------------------------------------------------------------
+
     def _build_graph(self):
         graph = StateGraph(QAState)
 
@@ -137,10 +112,10 @@ Antwort: Gib eine vollständige und detaillierte Antwort auf Deutsch. Erkläre a
         graph.set_finish_point("generate")
         return graph.compile()
 
-    # ------------------------------------------------------------------
+
     def answer(self, question: str) -> str:
         result = self._graph.invoke({"question": question})
         return result["answer"]
     
-    ask = answer  # alias for convenience
+    ask = answer 
 

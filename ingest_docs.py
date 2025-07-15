@@ -105,8 +105,6 @@ class DocumentIngestor:
         return None
 
 
-# ---------------------------------------------------------------------------#
-# CLI helper
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest a PDF into Chroma DB")
     parser.add_argument("pdf", help="Path to PDF file")
@@ -116,4 +114,4 @@ if __name__ == "__main__":
 
     ingestor = DocumentIngestor(args.db)
     n = ingestor.ingest(args.pdf, args.collection)
-    print(f"✅ Indexed {n} chunks from {args.pdf}")
+    print(f"Indexed {n} chunks from {args.pdf}")
