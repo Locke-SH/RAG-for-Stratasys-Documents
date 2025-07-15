@@ -121,17 +121,24 @@ with col2:
             with open(pdf_path, "rb") as f:
                 pdf_bytes = f.read()
             
-            # Encode PDF to base64 for embedding
-            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+            # Display PDF using Streamlit's built-in method
+            st.write("**PDF Dokument:**")
             
-            # Create PDF viewer using iframe
-            pdf_display = f"""
-            <iframe src="data:application/pdf;base64,{pdf_base64}" 
-                    width="100%" height="600" type="application/pdf">
-            </iframe>
-            """
-            
-            st.markdown(pdf_display, unsafe_allow_html=True)
+            # Try to display PDF directly
+            try:
+                # Use Streamlit's experimental PDF viewer
+                st.write(f"📄 **{st.session_state.selected_collection}.pdf**")
+                
+                # Create a download link that opens in new tab for viewing
+                pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+                pdf_link = f'<a href="data:application/pdf;base64,{pdf_base64}" target="_blank">🔍 PDF in neuem Tab öffnen</a>'
+                st.markdown(pdf_link, unsafe_allow_html=True)
+                
+                # Show PDF info
+                st.write(f"**Dateigröße:** {len(pdf_bytes) / 1024:.1f} KB")
+                
+            except Exception as e:
+                st.error(f"Fehler beim Anzeigen des PDFs: {e}")
             
             # Download button
             st.download_button(
@@ -140,6 +147,10 @@ with col2:
                 file_name=f"{st.session_state.selected_collection}.pdf",
                 mime="application/pdf"
             )
+            
+            # Alternative: Show first few pages as images (requires additional dependencies)
+            st.info("💡 Tipp: Klicken Sie auf 'PDF in neuem Tab öffnen' um das Dokument zu betrachten.")
+            
         else:
             st.warning("PDF-Datei nicht gefunden. Das Dokument wurde möglicherweise vor der PDF-Speicher-Funktion hochgeladen.")
     else:
