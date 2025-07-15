@@ -25,6 +25,8 @@ if "selected_collection" not in st.session_state:
     st.session_state.selected_collection = None
 if "pdf_page" not in st.session_state:
     st.session_state.pdf_page = 1
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
 # ---------------------------------------------------------------------------
 # Sidebar - Document Management
@@ -105,13 +107,9 @@ with col1:
     else:
         st.warning("Bitte wählen Sie ein Dokument aus der Seitenleiste oder laden Sie ein neues hoch.")
     
-    # Chat-Interaktion
-    prompt = st.chat_input("Frage stellen …")
-    if prompt and st.session_state.pipeline:
-        with st.spinner("Denke nach …"):
-            answer = st.session_state.pipeline.answer(prompt)
-        
-        # Display answer
+    # Display chat history
+    for i, (question, answer) in enumerate(st.session_state.chat_history):
+        st.chat_message("user").write(question)
         st.chat_message("assistant").write(answer)
         
         # Extract page numbers from answer and create clickable buttons
@@ -120,11 +118,21 @@ with col1:
         if page_matches:
             st.write("**Zu Seiten springen:**")
             cols = st.columns(len(page_matches))
-            for i, page_num in enumerate(set(page_matches)):  # Remove duplicates
-                with cols[i % len(cols)]:
-                    if st.button(f"📄 Seite {page_num}", key=f"goto_page_{page_num}"):
+            for j, page_num in enumerate(set(page_matches)):  # Remove duplicates
+                with cols[j % len(cols)]:
+                    if st.button(f"📄 Seite {page_num}", key=f"goto_page_{i}_{page_num}"):
                         st.session_state.pdf_page = int(page_num)
                         st.rerun()
+
+    # Chat-Interaktion
+    prompt = st.chat_input("Frage stellen …")
+    if prompt and st.session_state.pipeline:
+        with st.spinner("Denke nach …"):
+            answer = st.session_state.pipeline.answer(prompt)
+        
+        # Add to chat history
+        st.session_state.chat_history.append((prompt, answer))
+        st.rerun()
 
 with col2:
     st.header("📄 PDF Viewer")
