@@ -35,13 +35,11 @@ if uploaded and st.session_state.pipeline is None:
         n_chunks = st.session_state.ingestor.ingest(tmp_path, collection)
         st.session_state.pipeline = RAGPipeline(collection_name=collection)
     st.success(f"✅ {n_chunks} Chunks indiziert.")
-    st.session_state.pipeline = RAGPipeline()        # Retriever & OpenRouter-LLM
 
 # ---------------------------------------------------------------------------
 # Chat-Interaktion
 prompt = st.chat_input("Frage stellen …")
 if prompt and st.session_state.pipeline:
     with st.spinner("Denke nach …"):
-        #answer = st.session_state.pipeline.answer(prompt)
-        answer = st.session_state.pipeline.ask(prompt)
+        answer = st.session_state.pipeline.answer(prompt)
     st.chat_message("assistant").write(answer)
