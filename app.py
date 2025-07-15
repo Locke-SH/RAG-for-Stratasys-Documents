@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import streamlit as st
+import base64
 
 from ingest_docs import DocumentIngestor
 from rag_graph import RAGPipeline
@@ -91,7 +92,7 @@ with st.sidebar:
 
 # ---------------------------------------------------------------------------
 # Main Content Area
-col1, col2 = st.columns([2, 1])
+col1, col2 = st.columns([1, 1])
 
 with col1:
     st.header("💬 Chat")
@@ -110,13 +111,36 @@ with col1:
         st.chat_message("assistant").write(answer)
 
 with col2:
-    st.header("📊 Dokument-Info")
+    st.header("📄 PDF Viewer")
     
-    if st.session_state.selected_collection and st.session_state.pipeline:
-        st.write(f"**Sammlung:** {st.session_state.selected_collection}")
-        st.write("**Status:** Bereit für Fragen")
+    if st.session_state.selected_collection:
+        pdf_path = st.session_state.ingestor.get_pdf_path(st.session_state.selected_collection)
         
-        # You could add more document statistics here
-        # For example: number of chunks, document metadata, etc.
+        if pdf_path and pdf_path.exists():
+            # Read PDF file
+            with open(pdf_path, "rb") as f:
+                pdf_bytes = f.read()
+            
+            # Encode PDF to base64 for embedding
+            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+            
+            # Create PDF viewer using iframe
+            pdf_display = f"""
+            <iframe src="data:application/pdf;base64,{pdf_base64}" 
+                    width="100%" height="600" type="application/pdf">
+            </iframe>
+            """
+            
+            st.markdown(pdf_display, unsafe_allow_html=True)
+            
+            # Download button
+            st.download_button(
+                label="📥 PDF herunterladen",
+                data=pdf_bytes,
+                file_name=f"{st.session_state.selected_collection}.pdf",
+                mime="application/pdf"
+            )
+        else:
+            st.warning("PDF-Datei nicht gefunden. Das Dokument wurde möglicherweise vor der PDF-Speicher-Funktion hochgeladen.")
     else:
-        st.write("Kein Dokument ausgewählt")
+        st.write("Wählen Sie ein Dokument aus, um das PDF anzuzeigen.")

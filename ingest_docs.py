@@ -34,6 +34,7 @@ class DocumentIngestor:
                  chunk_overlap: int | None = None,
                  model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
         self.persist_dir = Path(persist_dir); self.persist_dir.mkdir(exist_ok=True)
+        self.pdfs_dir = self.persist_dir / "pdfs"; self.pdfs_dir.mkdir(exist_ok=True)
         cs = chunk_size or int(os.getenv("CHUNK_SIZE", "1024"))
         co = chunk_overlap or int(os.getenv("CHUNK_OVERLAP", "64"))
         self._splitter = RecursiveCharacterTextSplitter(chunk_size=cs,
@@ -47,6 +48,13 @@ class DocumentIngestor:
         Chroma.from_documents(chunks, self._embedding,
                               persist_directory=str(self.persist_dir),
                               collection_name=collection)
+        
+        # Store the original PDF file
+        if collection:
+            pdf_copy_path = self.pdfs_dir / f"{collection}.pdf"
+            import shutil
+            shutil.copy2(pdf, pdf_copy_path)
+        
         return len(chunks)
 
     def list_collections(self) -> list[str]:
@@ -75,6 +83,12 @@ class DocumentIngestor:
                 embedding_function=self._embedding
             )
             chroma_client.delete_collection()
+            
+            # Also delete the stored PDF file
+            pdf_path = self.pdfs_dir / f"{collection_name}.pdf"
+            if pdf_path.exists():
+                pdf_path.unlink()
+            
             return True
         except Exception:
             return False
