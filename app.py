@@ -131,8 +131,21 @@ with col2:
             # Create embedded PDF viewer with better compatibility
             pdf_display = f"""
             <div style="width:100%; height:600px; border:1px solid #ccc; border-radius:5px; overflow:hidden;">
-               iframe = f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="80%" height="400"></iframe>'
-                html(iframe, height=620)
+                <object data="data:application/pdf;base64,{pdf_base64}" 
+                        type="application/pdf" 
+                        width="100%" 
+                        height="100%">
+                    <embed src="data:application/pdf;base64,{pdf_base64}" 
+                           type="application/pdf" 
+                           width="100%" 
+                           height="100%">
+                        <p>Ihr Browser unterstützt keine PDF-Anzeige. 
+                           <a href="data:application/pdf;base64,{pdf_base64}" target="_blank">
+                           Klicken Sie hier, um das PDF in einem neuen Tab zu öffnen.
+                           </a>
+                        </p>
+                    </embed>
+                </object>
             </div>
             """
             
@@ -158,6 +171,3 @@ with col2:
     else:
         st.write("Wählen Sie ein Dokument aus, um das PDF anzuzeigen.")
 
-# ---------------------------------------------------------------------------
-st.write("Resolved PDF path:", pdf_path)
-st.write("Exists:", pdf_path and pdf_path.exists())
