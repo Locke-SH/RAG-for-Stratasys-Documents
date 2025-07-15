@@ -128,48 +128,17 @@ with col2:
             # Encode PDF to base64 for embedding
             pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
             
-            # Try to display PDF using file path first, then fallback to base64
-            pdf_url = st.session_state.ingestor.get_pdf_url(st.session_state.selected_collection)
-            
-            if pdf_url:
-                # Use iframe with local file path
-                pdf_display = f"""
-                <div style="width:100%; height:600px; border:1px solid #ccc; border-radius:5px; overflow:hidden;">
-                    <iframe src="{pdf_url}" 
-                            width="100%" 
-                            height="100%" 
-                            type="application/pdf">
-                        <p>Ihr Browser unterstützt keine PDF-Anzeige. 
-                           <a href="{pdf_url}" target="_blank">
-                           Klicken Sie hier, um das PDF in einem neuen Tab zu öffnen.
-                           </a>
-                        </p>
-                    </iframe>
-                </div>
-                """
-                st.markdown(pdf_display, unsafe_allow_html=True)
-            else:
-                # Fallback to base64 embedding
-                pdf_display = f"""
-                <div style="width:100%; height:600px; border:1px solid #ccc; border-radius:5px; overflow:hidden;">
-                    <object data="data:application/pdf;base64,{pdf_base64}" 
-                            type="application/pdf" 
-                            width="100%" 
-                            height="100%">
-                        <embed src="data:application/pdf;base64,{pdf_base64}" 
-                               type="application/pdf" 
-                               width="100%" 
-                               height="100%">
-                            <p>Ihr Browser unterstützt keine PDF-Anzeige. 
-                               <a href="data:application/pdf;base64,{pdf_base64}" target="_blank">
-                               Klicken Sie hier, um das PDF in einem neuen Tab zu öffnen.
-                               </a>
-                            </p>
-                        </embed>
-                    </object>
-                </div>
-                """
-                st.markdown(pdf_display, unsafe_allow_html=True)
+            # Display PDF using base64 embedding (most reliable method)
+            pdf_display = f"""
+            <div style="width:100%; height:600px; border:1px solid #ccc; border-radius:5px; overflow:hidden;">
+                <iframe src="data:application/pdf;base64,{pdf_base64}" 
+                        width="100%" 
+                        height="100%" 
+                        style="border:none;">
+                </iframe>
+            </div>
+            """
+            st.markdown(pdf_display, unsafe_allow_html=True)
             
             # Show PDF info
             st.write(f"**Dateigröße:** {len(pdf_bytes) / 1024:.1f} KB")
@@ -183,10 +152,7 @@ with col2:
             )
             
             # Fallback link for browsers that don't support embedded PDFs
-            if pdf_url:
-                pdf_link = f'<a href="{pdf_url}" target="_blank" style="color: #1f77b4; text-decoration: none;">🔍 PDF in neuem Tab öffnen (falls nicht sichtbar)</a>'
-            else:
-                pdf_link = f'<a href="data:application/pdf;base64,{pdf_base64}" target="_blank" style="color: #1f77b4; text-decoration: none;">🔍 PDF in neuem Tab öffnen (falls nicht sichtbar)</a>'
+            pdf_link = f'<a href="data:application/pdf;base64,{pdf_base64}" target="_blank" style="color: #1f77b4; text-decoration: none;">🔍 PDF in neuem Tab öffnen (falls nicht sichtbar)</a>'
             st.markdown(pdf_link, unsafe_allow_html=True)
             
         else:
