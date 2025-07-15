@@ -1,0 +1,48 @@
+Byte-compiled / cache
+
+pycache/
+*.py[cod]
+*.pyo
+
+Virtual environment
+
+.venv/
+venv/
+
+IDE configs
+
+.idea/
+.vscode/
+*.sw?
+
+Environment vars
+
+.env
+*.env
+
+OS files
+
+.DS_Store
+Thumbs.db
+
+Data & artifacts
+
+/docs/*.pdf
+/db/
+/tmp/
+
+Python tooling
+
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+Jupyter & Streamlit
+
+.ipynb_checkpoints/
+.streamlit/
+
+Chainlit logs
+
+.chainlit/
