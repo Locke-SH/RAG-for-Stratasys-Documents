@@ -46,3 +46,4 @@ Jupyter & Streamlit
 Chainlit logs
 
 .chainlit/
+.aider*
