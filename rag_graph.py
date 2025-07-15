@@ -51,6 +51,7 @@ TEMPERATURE = float(os.getenv("TEMPERATURE", "0.3"))
 class QAState:
     question: str
     context: List[str] = field(default_factory=list)
+    sources: List[str] = field(default_factory=list)
     answer: Optional[str] = None
 
 
@@ -65,9 +66,12 @@ class RAGPipeline:
 Kontext:
 {context}
 
+Quellen:
+{sources}
+
 Frage: {question}
 
-Antwort: Gib eine vollständige und detaillierte Antwort auf Deutsch. Erkläre alle relevanten Aspekte und verwende konkrete Informationen aus dem Kontext."""
+Antwort: Gib eine vollständige und detaillierte Antwort auf Deutsch. Erkläre alle relevanten Aspekte und verwende konkrete Informationen aus dem Kontext. Gib am Ende der Antwort die Quellen an (Seiten), wo die Informationen gefunden wurden."""
     )
 
     def __init__(
@@ -108,6 +112,16 @@ Antwort: Gib eine vollständige und detaillierte Antwort auf Deutsch. Erkläre a
         def retrieve_node(state: QAState) -> QAState:
             docs = self._retriever.invoke(state.question) 
             state.context = [d.page_content for d in docs]
+            # Extract page information from metadata
+            sources = []
+            for doc in docs:
+                page = doc.metadata.get('page', 'Unbekannt')
+                source = doc.metadata.get('source', 'Unbekannt')
+                if isinstance(page, int):
+                    sources.append(f"Seite {page + 1}")  # PDF pages are 0-indexed
+                else:
+                    sources.append(f"Quelle: {source}")
+            state.sources = sources
             return state
 
         def generate_node(state: QAState) -> QAState:
