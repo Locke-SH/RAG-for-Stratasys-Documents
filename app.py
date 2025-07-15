@@ -108,7 +108,28 @@ with col1:
     if prompt and st.session_state.pipeline:
         with st.spinner("Denke nach …"):
             answer = st.session_state.pipeline.answer(prompt)
-        st.chat_message("assistant").write(answer)
+        
+        # Display answer with clickable page links
+        st.chat_message("assistant").markdown(answer)
+        
+        # Add JavaScript to handle page navigation
+        st.markdown("""
+        <script>
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'A' && e.target.href.includes('#')) {
+                e.preventDefault();
+                const pageNum = e.target.href.split('#')[1];
+                const pdfViewer = document.querySelector('iframe[title*="pdf"]');
+                if (pdfViewer) {
+                    pdfViewer.contentWindow.postMessage({
+                        type: 'goToPage',
+                        page: parseInt(pageNum)
+                    }, '*');
+                }
+            }
+        });
+        </script>
+        """, unsafe_allow_html=True)
 
 with col2:
     st.header("📄 PDF Viewer")
@@ -130,7 +151,9 @@ with col2:
                 input=pdf_bytes,
                 width=700,
                 height=600,
-                key=f"pdf_viewer_{st.session_state.selected_collection}"
+                key=f"pdf_viewer_{st.session_state.selected_collection}",
+                pages_to_render=list(range(1, 100)),  # Render first 100 pages
+                render_text=True
             )
             
             # Show PDF info
