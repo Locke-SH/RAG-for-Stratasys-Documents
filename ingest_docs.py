@@ -65,6 +65,20 @@ class DocumentIngestor:
         except Exception:
             return []
 
+    def delete_collection(self, collection_name: str) -> bool:
+        """Delete a collection from the Chroma database."""
+        try:
+            # Create a temporary Chroma instance to delete the collection
+            chroma_client = Chroma(
+                persist_directory=str(self.persist_dir),
+                collection_name=collection_name,
+                embedding_function=self._embedding
+            )
+            chroma_client.delete_collection()
+            return True
+        except Exception:
+            return False
+
 
 # ---------------------------------------------------------------------------#
 # CLI helper

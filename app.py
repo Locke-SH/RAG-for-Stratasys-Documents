@@ -34,10 +34,25 @@ with st.sidebar:
     if collections:
         st.subheader("Vorhandene Dokumente")
         for collection in collections:
-            if st.button(f"📄 {collection}", key=f"select_{collection}"):
-                st.session_state.selected_collection = collection
-                st.session_state.pipeline = RAGPipeline(collection_name=collection)
-                st.rerun()
+            col_btn, del_btn = st.columns([3, 1])
+            
+            with col_btn:
+                if st.button(f"📄 {collection}", key=f"select_{collection}"):
+                    st.session_state.selected_collection = collection
+                    st.session_state.pipeline = RAGPipeline(collection_name=collection)
+                    st.rerun()
+            
+            with del_btn:
+                if st.button("🗑️", key=f"delete_{collection}", help=f"Lösche {collection}"):
+                    if st.session_state.ingestor.delete_collection(collection):
+                        # Clear selection if deleted collection was selected
+                        if st.session_state.selected_collection == collection:
+                            st.session_state.selected_collection = None
+                            st.session_state.pipeline = None
+                        st.success(f"✅ '{collection}' wurde gelöscht.")
+                        st.rerun()
+                    else:
+                        st.error(f"❌ Fehler beim Löschen von '{collection}'.")
     else:
         st.info("Keine Dokumente in der Datenbank gefunden.")
     
