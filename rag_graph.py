@@ -41,7 +41,7 @@ if not OPENROUTER_API_KEY:
 OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 HTTP_REFERER = os.getenv("HTTP_REFERER", "https://your-app.com")
 OR_TITLE = os.getenv("OR_TITLE", "PDF-RAG-Chat")
-MODEL_NAME = os.getenv("OPENROUTER_MODEL")
+MODEL_NAME = os.getenv("OPENROUTER_MODEL", "mistralai/mistral-medium")
 DB_DIR = os.getenv("DB_DIR", "db")
 K = int(os.getenv("RETRIEVAL_K", "4"))
 TEMPERATURE = float(os.getenv("TEMPERATURE", "0"))
@@ -111,7 +111,8 @@ Antwort (Deutsch, prägnant):"""
             return state
 
         def generate_node(state: QAState) -> QAState:
-            state.answer = self._llm.invoke(self.PROMPT.format(**state.__dict__))
+            response = self._llm.invoke(self.PROMPT.format(**state.__dict__))
+            state.answer = response.content
             return state
 
         graph.add_node("retrieve", retrieve_node)
@@ -125,6 +126,6 @@ Antwort (Deutsch, prägnant):"""
     def answer(self, question: str) -> str:
         result = self._graph.invoke({"question": question})
         return result["answer"]
-    #    #return self._graph.invoke(QAState(question)).answer  # type: ignore[arg-type]
+    
     ask = answer  # alias for convenience
 
