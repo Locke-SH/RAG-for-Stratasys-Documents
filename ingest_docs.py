@@ -34,7 +34,7 @@ class DocumentIngestor:
                  chunk_overlap: int | None = None,
                  model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
         self.persist_dir = Path(persist_dir); self.persist_dir.mkdir(exist_ok=True)
-        self.pdfs_dir = self.persist_dir / "pdfs"; self.pdfs_dir.mkdir(exist_ok=True)
+        self.pdfs_dir = Path("data"); self.pdfs_dir.mkdir(exist_ok=True)
         cs = chunk_size or int(os.getenv("CHUNK_SIZE", "1024"))
         co = chunk_overlap or int(os.getenv("CHUNK_OVERLAP", "64"))
         self._splitter = RecursiveCharacterTextSplitter(chunk_size=cs,
@@ -97,6 +97,13 @@ class DocumentIngestor:
         """Get the path to the stored PDF for a collection."""
         pdf_path = self.pdfs_dir / f"{collection_name}.pdf"
         return pdf_path if pdf_path.exists() else None
+    
+    def get_pdf_url(self, collection_name: str) -> str | None:
+        """Get the URL to serve the PDF file."""
+        pdf_path = self.get_pdf_path(collection_name)
+        if pdf_path and pdf_path.exists():
+            return f"./data/{collection_name}.pdf"
+        return None
 
 
 # ---------------------------------------------------------------------------#
