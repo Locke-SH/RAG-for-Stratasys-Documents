@@ -1,16 +1,47 @@
+# -*- coding: utf-8 -*-
+"""app.py – Streamlit Front-End für die OOP-RAG-Pipeline (OpenRouter)"""
+
+from __future__ import annotations
+
 import streamlit as st
-from ingest_docs import ingest
-from rag_graph import answer
 
-st.title("📄 Chat mit deinem PDF")
+from ingest_docs import DocumentIngestor
+from rag_graph import RAGPipeline
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Grundlayout
+st.set_page_config(page_title="PDF-RAG (OpenRouter)", page_icon="📄")
+st.title("📄 Chat mit deinem PDF – OpenRouter Edition")
+
+# ---------------------------------------------------------------------------
+# Session-Singletons
+if "ingestor" not in st.session_state:
+    st.session_state.ingestor = DocumentIngestor()   # nutzt .env-Chunk-Settings
+if "pipeline" not in st.session_state:
+    st.session_state.pipeline = None                 # wird nach Ingestion gebaut
+
+# ---------------------------------------------------------------------------
+# PDF-Upload & Indexieren
 uploaded = st.file_uploader("PDF hochladen", type="pdf")
+if uploaded and st.session_state.pipeline is None:
+    with st.spinner("Indexiere Dokument …"):
+        tmp_path = "/tmp/upload.pdf"
+        with open(tmp_path, "wb") as f:
+            f.write(uploaded.getbuffer())
 
-if uploaded and "db_built" not in st.session_state:
-    with open("tmp.pdf", "wb") as f: f.write(uploaded.getbuffer())
-    ingest("tmp.pdf"); st.session_state.db_built = True
-    st.success("✅ Dokument indexiert!")
+        # ► Dateiname (ohne .pdf) als Collection-Name verwenden
+        collection = Path(uploaded.name).stem
+        n_chunks = st.session_state.ingestor.ingest(tmp_path, collection)
+        st.session_state.pipeline = RAGPipeline(collection_name=collection)
+    st.success(f"✅ {n_chunks} Chunks indiziert.")
+    st.session_state.pipeline = RAGPipeline()        # Retriever & OpenRouter-LLM
 
+# ---------------------------------------------------------------------------
+# Chat-Interaktion
 prompt = st.chat_input("Frage stellen …")
-if prompt:
+if prompt and st.session_state.pipeline:
     with st.spinner("Denke nach …"):
-        st.chat_message("assistant").write(answer(prompt))
+        #answer = st.session_state.pipeline.answer(prompt)
+        answer = st.session_state.pipeline.ask(prompt)
+    st.chat_message("assistant").write(answer)
