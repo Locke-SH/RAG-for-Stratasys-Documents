@@ -132,7 +132,7 @@ with col1:
         
         # Add to chat history
         st.session_state.chat_history.append((prompt, answer))
-        st.rerun()
+        # Don't rerun immediately, let the interface update naturally
 
 with col2:
     st.header("📄 PDF Viewer")
