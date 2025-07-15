@@ -119,7 +119,7 @@ Antwort: Gib eine vollständige und detaillierte Antwort auf Deutsch. Erkläre a
                 source = doc.metadata.get('source', 'Unbekannt')
                 if isinstance(page, int):
                     page_num = page + 1  # PDF pages are 0-indexed
-                    sources.append(f"[Seite {page_num}](#{page_num})")  # Markdown link format
+                    sources.append(f"Seite {page_num}")  # Simple text format
                 else:
                     sources.append(f"Quelle: {source}")
             state.sources = sources

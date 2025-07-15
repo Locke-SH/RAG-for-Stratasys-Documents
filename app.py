@@ -23,6 +23,8 @@ if "pipeline" not in st.session_state:
     st.session_state.pipeline = None                 # wird nach Ingestion gebaut
 if "selected_collection" not in st.session_state:
     st.session_state.selected_collection = None
+if "pdf_page" not in st.session_state:
+    st.session_state.pdf_page = 1
 
 # ---------------------------------------------------------------------------
 # Sidebar - Document Management
@@ -109,27 +111,20 @@ with col1:
         with st.spinner("Denke nach …"):
             answer = st.session_state.pipeline.answer(prompt)
         
-        # Display answer with clickable page links
-        st.chat_message("assistant").markdown(answer)
+        # Display answer
+        st.chat_message("assistant").write(answer)
         
-        # Add JavaScript to handle page navigation
-        st.markdown("""
-        <script>
-        document.addEventListener('click', function(e) {
-            if (e.target.tagName === 'A' && e.target.href.includes('#')) {
-                e.preventDefault();
-                const pageNum = e.target.href.split('#')[1];
-                const pdfViewer = document.querySelector('iframe[title*="pdf"]');
-                if (pdfViewer) {
-                    pdfViewer.contentWindow.postMessage({
-                        type: 'goToPage',
-                        page: parseInt(pageNum)
-                    }, '*');
-                }
-            }
-        });
-        </script>
-        """, unsafe_allow_html=True)
+        # Extract page numbers from answer and create clickable buttons
+        import re
+        page_matches = re.findall(r'Seite (\d+)', answer)
+        if page_matches:
+            st.write("**Zu Seiten springen:**")
+            cols = st.columns(len(page_matches))
+            for i, page_num in enumerate(set(page_matches)):  # Remove duplicates
+                with cols[i % len(cols)]:
+                    if st.button(f"📄 Seite {page_num}", key=f"goto_page_{page_num}"):
+                        st.session_state.pdf_page = int(page_num)
+                        st.rerun()
 
 with col2:
     st.header("📄 PDF Viewer")
@@ -151,10 +146,30 @@ with col2:
                 input=pdf_bytes,
                 width=700,
                 height=600,
-                key=f"pdf_viewer_{st.session_state.selected_collection}",
-                pages_to_render=list(range(1, 100)),  # Render first 100 pages
+                key=f"pdf_viewer_{st.session_state.selected_collection}_{st.session_state.pdf_page}",
+                pages_to_render=[st.session_state.pdf_page] if st.session_state.pdf_page else list(range(1, 10)),
                 render_text=True
             )
+            
+            # Page navigation controls
+            st.write(f"**Aktuelle Seite:** {st.session_state.pdf_page}")
+            col_prev, col_next, col_goto = st.columns([1, 1, 2])
+            
+            with col_prev:
+                if st.button("⬅️ Vorherige", disabled=st.session_state.pdf_page <= 1):
+                    st.session_state.pdf_page = max(1, st.session_state.pdf_page - 1)
+                    st.rerun()
+            
+            with col_next:
+                if st.button("➡️ Nächste"):
+                    st.session_state.pdf_page += 1
+                    st.rerun()
+            
+            with col_goto:
+                page_input = st.number_input("Gehe zu Seite:", min_value=1, value=st.session_state.pdf_page, key="page_input")
+                if st.button("Gehe zu Seite"):
+                    st.session_state.pdf_page = page_input
+                    st.rerun()
             
             # Show PDF info
             st.write(f"**Dateigröße:** {len(pdf_bytes) / 1024:.1f} KB")
