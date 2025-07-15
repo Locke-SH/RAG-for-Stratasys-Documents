@@ -8,6 +8,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
+import sqlite3
 
 load_dotenv()
 
@@ -31,6 +32,22 @@ class DocumentIngestor:
                               persist_directory=str(self.persist_dir),
                               collection_name=collection)
         return len(chunks)
+
+    def list_collections(self) -> list[str]:
+        """List all collections in the Chroma database."""
+        db_path = self.persist_dir / "chroma.sqlite3"
+        if not db_path.exists():
+            return []
+        
+        try:
+            conn = sqlite3.connect(str(db_path))
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM collections")
+            collections = [row[0] for row in cursor.fetchall()]
+            conn.close()
+            return collections
+        except Exception:
+            return []
 
 
 # ---------------------------------------------------------------------------#
