@@ -48,18 +48,30 @@ with st.sidebar:
     uploaded = st.file_uploader("PDF hochladen", type="pdf")
     
     if uploaded:
-        if st.button("Dokument indexieren"):
+        # Show suggested collection name and allow editing
+        suggested_name = st.session_state.ingestor.sanitize_collection_name(Path(uploaded.name).stem)
+        collection_name = st.text_input(
+            "Collection Name:", 
+            value=suggested_name,
+            help="Name für die Dokumentensammlung (3-512 Zeichen, nur a-z, A-Z, 0-9, ., _, -)"
+        )
+        
+        if st.button("Dokument indexieren", disabled=len(collection_name.strip()) < 3):
+            # Sanitize the user input
+            collection = st.session_state.ingestor.sanitize_collection_name(collection_name.strip())
+            
+            if collection != collection_name.strip():
+                st.warning(f"Collection Name wurde angepasst zu: '{collection}'")
+            
             with st.spinner("Indexiere Dokument …"):
                 tmp_path = "/tmp/upload.pdf"
                 with open(tmp_path, "wb") as f:
                     f.write(uploaded.getbuffer())
 
-                # ► Dateiname (ohne .pdf) als Collection-Name verwenden
-                collection = Path(uploaded.name).stem
                 n_chunks = st.session_state.ingestor.ingest(tmp_path, collection)
                 st.session_state.pipeline = RAGPipeline(collection_name=collection)
                 st.session_state.selected_collection = collection
-            st.success(f"✅ {n_chunks} Chunks indiziert.")
+            st.success(f"✅ {n_chunks} Chunks indiziert als '{collection}'.")
             st.rerun()
 
 # ---------------------------------------------------------------------------

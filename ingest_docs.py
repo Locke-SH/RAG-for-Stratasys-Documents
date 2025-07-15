@@ -9,10 +9,26 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 import sqlite3
+import re
 
 load_dotenv()
 
 class DocumentIngestor:
+    @staticmethod
+    def sanitize_collection_name(name: str) -> str:
+        """Sanitize collection name to meet Chroma requirements."""
+        # Replace spaces and invalid chars with underscores
+        sanitized = re.sub(r'[^a-zA-Z0-9._-]', '_', name)
+        # Remove leading/trailing non-alphanumeric chars
+        sanitized = re.sub(r'^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$', '', sanitized)
+        # Ensure minimum length
+        if len(sanitized) < 3:
+            sanitized = f"doc_{sanitized}"
+        # Ensure maximum length
+        if len(sanitized) > 512:
+            sanitized = sanitized[:512]
+        return sanitized
+
     def __init__(self, persist_dir: str | Path = "db",
                  chunk_size: int | None = None,
                  chunk_overlap: int | None = None,
