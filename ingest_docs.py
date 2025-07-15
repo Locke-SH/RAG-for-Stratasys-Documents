@@ -93,6 +93,11 @@ class DocumentIngestor:
         except Exception:
             return False
 
+    def get_pdf_path(self, collection_name: str) -> Path | None:
+        """Get the path to the stored PDF for a collection."""
+        pdf_path = self.pdfs_dir / f"{collection_name}.pdf"
+        return pdf_path if pdf_path.exists() else None
+
 
 # ---------------------------------------------------------------------------#
 # CLI helper
