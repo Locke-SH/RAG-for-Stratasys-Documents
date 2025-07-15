@@ -1,14 +1,53 @@
+# -*- coding: utf-8 -*-
+"""rag_graph.py – LangGraph RAG pipeline using OpenRouter
+
+Import-Beispiel:
+    from rag_graph import RAGPipeline, answer
+    print(answer("Was ist additive Fertigung?"))
+
+Umgebungsvariablen (.env oder Shell):
+    OPENROUTER_API_KEY   required
+    OPENROUTER_BASE_URL  default https://openrouter.ai/api/v1
+    HTTP_REFERER         required by OpenRouter (e.g. https://your-app.com)
+    OR_TITLE             short app name (default PDF-RAG-Chat)
+    OPENROUTER_MODEL     default mistralai/mistral-medium
+    DB_DIR               default ./db
+    RETRIEVAL_K          default 4
+    TEMPERATURE          default 0.0
+"""
+from __future__ import annotations
+
+import os
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from langgraph.graph import StateGraph
-from langchain.vectorstores import Chroma
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
+from dotenv import load_dotenv
+
 from langchain.prompts import PromptTemplate
+from langgraph.graph import StateGraph
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_openai import ChatOpenAI
 
+load_dotenv()
 
-# ----------  State ----------
+# ---------------------------------------------------------------------------
+# Environment
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
+if not OPENROUTER_API_KEY:
+    raise EnvironmentError("OPENROUTER_API_KEY (or OPENAI_API_KEY) is missing")
+
+OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+HTTP_REFERER = os.getenv("HTTP_REFERER", "https://your-app.com")
+OR_TITLE = os.getenv("OR_TITLE", "PDF-RAG-Chat")
+MODEL_NAME = os.getenv("OPENROUTER_MODEL")
+DB_DIR = os.getenv("DB_DIR", "db")
+K = int(os.getenv("RETRIEVAL_K", "4"))
+TEMPERATURE = float(os.getenv("TEMPERATURE", "0"))
+
+# ---------------------------------------------------------------------------
+# LangGraph state
 @dataclass
 class QAState:
     question: str
@@ -16,41 +55,76 @@ class QAState:
     answer: Optional[str] = None
 
 
-# ----------  Ressourcen ----------
-DB_DIR = "db"
-retriever = Chroma(persist_directory=DB_DIR,
-                   embedding_function=OpenAIEmbeddings()).as_retriever(k=4)
-llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.0)
+# ---------------------------------------------------------------------------
+# RAGPipeline class
+class RAGPipeline:
+    """Retrieval-augmented generation wrapped in a LangGraph state machine."""
 
-PROMPT = PromptTemplate.from_template(
-    """Du bist ein Experte für technische Dokumente.
-    Nutze ausschließlich den Kontext, um die Frage zu beantworten.
-    Kontext:
-    {context}
+    PROMPT = PromptTemplate.from_template(
+        """Du bist ein Experte für technische Dokumente. Beantworte ausschließlich mithilfe des Kontexts.
 
-    Frage: {question}
-    Antwort (Deutsch):""")
+Kontext:
+{context}
 
-# ----------  Nodes ----------
-def retrieve_node(state: QAState) -> QAState:
-    docs = retriever.get_relevant_documents(state.question)
-    state.context = [d.page_content for d in docs]
-    return state
+Frage: {question}
+Antwort (Deutsch, prägnant):"""
+    )
 
-def generate_node(state: QAState) -> QAState:
-    state.answer = llm.predict(PROMPT.format(**state.__dict__))
-    return state
+    def __init__(
+        self,
+        db_dir: str = DB_DIR,
+        collection_name: str | None = None,
+        k: int = K,
+        model_name: str = MODEL_NAME,
+        temperature: float = TEMPERATURE,
+    ) -> None:
+        collection_name = collection_name or "default" 
+        # Retriever
+        self._retriever = Chroma(
+            persist_directory=db_dir,
+            collection_name=collection_name,
+            embedding_function=HuggingFaceEmbeddings(                # <—
+                model_name="sentence-transformers/all-MiniLM-L6-v2"),
+        ).as_retriever(k=k)
 
+        # OpenRouter LLM
+        self._llm = ChatOpenAI(
+            model_name=model_name,
+            openai_api_key=OPENROUTER_API_KEY,
+            openai_api_base=OPENROUTER_BASE_URL,
+            default_headers={
+                "HTTP-Referer": HTTP_REFERER,
+                "X-Title": OR_TITLE,
+            },
+            temperature=temperature,
+            request_timeout=90,
+        )
+        self._graph = self._build_graph()
 
-# ----------  Graph ----------
-graph = StateGraph(QAState)
-graph.add_node("retrieve", retrieve_node)
-graph.add_node("generate", generate_node)
-graph.set_entry_point("retrieve")
-graph.add_edge("retrieve", "generate")
-graph.set_finish_point("generate")
+    # ------------------------------------------------------------------
+    def _build_graph(self):
+        graph = StateGraph(QAState)
 
-rag_pipeline = graph.compile()      # <- importierbar im Front-End
+        def retrieve_node(state: QAState) -> QAState:
+            docs = self._retriever.invoke(state.question) 
+            state.context = [d.page_content for d in docs]
+            return state
 
-def answer(question: str) -> str:
-    return rag_pipeline.invoke(QAState(question)).answer
+        def generate_node(state: QAState) -> QAState:
+            state.answer = self._llm.invoke(self.PROMPT.format(**state.__dict__))
+            return state
+
+        graph.add_node("retrieve", retrieve_node)
+        graph.add_node("generate", generate_node)
+        graph.set_entry_point("retrieve")
+        graph.add_edge("retrieve", "generate")
+        graph.set_finish_point("generate")
+        return graph.compile()
+
+    # ------------------------------------------------------------------
+    def answer(self, question: str) -> str:
+        result = self._graph.invoke({"question": question})
+        return result["answer"]
+    #    #return self._graph.invoke(QAState(question)).answer  # type: ignore[arg-type]
+    ask = answer  # alias for convenience
+
