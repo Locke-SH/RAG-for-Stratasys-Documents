@@ -43,10 +43,10 @@ class RAGPipeline:
         self.collection_name = collection_name or "default" 
         # ---- Retriever ----
         self._retriever = Chroma(
-            persist_directory=str(self.cfg.db_dir),
+            persist_directory=self.cfg.db_dir,
             collection_name=self.collection_name,
             embedding_function=HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"),
+            model_name=self.cfg.embedding_model),
         ).as_retriever(k=self.cfg.retrieval_k)
 
         # ---- OpenRouter LLM ----
