@@ -160,10 +160,29 @@ with col1:
     
     # Display chat history
     
-    for i, (question, answer, chunks, llm_prompt) in enumerate(st.session_state.chat_history):
+    for i, entry in enumerate(st.session_state.chat_history):
+        # Handle both old format (4 items) and new format (5 items) for backward compatibility
+        if len(entry) == 5:
+            question, answer, chunks, llm_prompt, settings = entry
+        else:
+            question, answer, chunks, llm_prompt = entry
+            settings = None
+        
         st.chat_message("user").write(question)
         with st.expander(f"Antwort:", expanded=True):
                 st.chat_message("assistant").write(answer)
+        
+        # Display settings used for this question
+        if settings:
+            with st.expander(f"⚙️ Verwendete Einstellungen", expanded=False):
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Retrieval k", settings['retrieval_k'])
+                with col2:
+                    st.metric("Temperature", f"{settings['temperature']:.2f}")
+                with col3:
+                    st.write("**LLM Model:**")
+                    st.write(settings['llm_model'])
         
         # Display the LLM prompt
         with st.expander(f"🤖 An LLM gesendeter Prompt", expanded=False):
@@ -205,8 +224,15 @@ with col1:
         with st.spinner("Denke nach …"):
             answer, chunks, llm_prompt = st.session_state.pipeline.answer(prompt)
         
-        # Add to chat history
-        st.session_state.chat_history.append((prompt, answer, chunks, llm_prompt))
+        # Capture current settings
+        current_settings = {
+            'retrieval_k': st.session_state.cfg.retrieval_k,
+            'temperature': st.session_state.cfg.temperature,
+            'llm_model': st.session_state.cfg.openrouter_model
+        }
+        
+        # Add to chat history with settings
+        st.session_state.chat_history.append((prompt, answer, chunks, llm_prompt, current_settings))
         st.rerun()
 
 with col2:
