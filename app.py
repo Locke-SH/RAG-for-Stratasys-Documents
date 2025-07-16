@@ -56,7 +56,7 @@ with st.sidebar:
 
         # 2b – Ingestor & Pipeline neu instanziieren
         st.session_state.ingestor = DocumentIngestor(cfg=st.session_state.cfg)
-        if st.session_state.selected_collection and st.session_state.pipeline:
+        if st.session_state.selected_collection:
             st.session_state.pipeline = RAGPipeline(
                 collection_name = st.session_state.selected_collection,
                 cfg             = st.session_state.cfg,
