@@ -159,7 +159,6 @@ with col1:
         st.warning("Bitte wählen Sie ein Dokument aus der Seitenleiste oder laden Sie ein neues hoch.")
     
     # Display chat history
-    
     for i, entry in enumerate(st.session_state.chat_history):
         # Handle both old format (4 items) and new format (5 items) for backward compatibility
         if len(entry) == 5:
