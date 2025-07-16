@@ -94,12 +94,14 @@ with st.sidebar:
     
     # Upload new document
     st.subheader("Neues Dokument hochladen")
+    
+    # Chunk settings for this document (shown before upload)
+    chunk_size = st.number_input("Chunk Size", 256, 4096, _dflt("chunk_size", 1024), step=256)
+    chunk_overlap = st.number_input("Chunk Overlap", 0, 2048, _dflt("chunk_overlap", 64), step=32)
+    
     uploaded = st.file_uploader("PDF hochladen", type="pdf")
     
     if uploaded:
-        # Chunk settings for this document
-        chunk_size = st.number_input("Chunk Size", 256, 4096, _dflt("chunk_size", 1024), step=256)
-        chunk_overlap = st.number_input("Chunk Overlap", 0, 2048, _dflt("chunk_overlap", 64), step=32)
         
         # Show suggested collection name and allow editing
         suggested_name = st.session_state.ingestor.sanitize_collection_name(Path(uploaded.name).stem)
