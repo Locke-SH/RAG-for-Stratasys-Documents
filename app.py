@@ -174,12 +174,12 @@ with col1:
         # Display settings used for this question
         if settings:
             with st.expander(f"⚙️ Verwendete Einstellungen", expanded=False):
-                col1, col2, col3 = st.columns(3)
-                with col1:
+                settings_col1, settings_col2, settings_col3 = st.columns(3)
+                with settings_col1:
                     st.metric("Retrieval k", settings['retrieval_k'])
-                with col2:
+                with settings_col2:
                     st.metric("Temperature", f"{settings['temperature']:.2f}")
-                with col3:
+                with settings_col3:
                     st.write("**LLM Model:**")
                     st.write(settings['llm_model'])
         
