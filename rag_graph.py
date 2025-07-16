@@ -20,6 +20,7 @@ class QAState:
     context: List[str] = field(default_factory=list)
     sources: List[str] = field(default_factory=list)
     answer: Optional[str] = None
+    chunks: List[dict] = field(default_factory=list)
 
 
 # RAGPipeline class
@@ -76,6 +77,7 @@ class RAGPipeline:
             state.context = [d.page_content for d in docs]
             # Extract page information from metadata
             sources = []
+            chunks = []
             for doc in docs:
                 page = doc.metadata.get('page', 'Unbekannt')
                 source = doc.metadata.get('source', 'Unbekannt')
@@ -84,7 +86,15 @@ class RAGPipeline:
                     sources.append(f"Seite {page_num}")  # Simple text format
                 else:
                     sources.append(f"Quelle: {source}")
+                
+                # Store chunk information for display
+                chunks.append({
+                    'content': doc.page_content,
+                    'page': page_num if isinstance(page, int) else 'Unbekannt',
+                    'source': source
+                })
             state.sources = sources
+            state.chunks = chunks
             return state
 
         def generate_node(state: QAState) -> QAState:
@@ -100,9 +110,9 @@ class RAGPipeline:
         return graph.compile()
 
 
-    def answer(self, question: str) -> str:
+    def answer(self, question: str) -> tuple[str, List[dict]]:
         result = self._graph.invoke({"question": question})
-        return result["answer"]
+        return result["answer"], result["chunks"]
     
     ask = answer 
 

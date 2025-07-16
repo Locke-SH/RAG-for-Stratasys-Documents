@@ -144,9 +144,23 @@ with col1:
         st.warning("Bitte wählen Sie ein Dokument aus der Seitenleiste oder laden Sie ein neues hoch.")
     
     # Display chat history
-    for i, (question, answer) in enumerate(st.session_state.chat_history):
+    for i, (question, answer, chunks) in enumerate(st.session_state.chat_history):
         st.chat_message("user").write(question)
         st.chat_message("assistant").write(answer)
+        
+        # Display retrieved chunks
+        if chunks:
+            with st.expander(f"📄 Verwendete Textabschnitte ({len(chunks)} Chunks)", expanded=False):
+                for j, chunk in enumerate(chunks):
+                    st.write(f"**Chunk {j+1} (Seite {chunk['page']}):**")
+                    st.text_area(
+                        f"Inhalt {j+1}:",
+                        value=chunk['content'],
+                        height=100,
+                        key=f"chunk_{i}_{j}",
+                        disabled=True
+                    )
+                    st.divider()
         
         # Extract page numbers from answer and create clickable buttons
         import re
@@ -154,7 +168,7 @@ with col1:
         if page_matches:
             st.write("**Zu Seiten springen:**")
             for page_num in sorted(set(page_matches), key=int):  # sortiert und Duplikate entfernt
-                if st.button(f"Seite {page_num}", key=f"goto_page_{page_num}"):
+                if st.button(f"Seite {page_num}", key=f"goto_page_{page_num}_{i}"):
                     st.session_state.pdf_page = int(page_num)
                     st.rerun()
 
@@ -162,10 +176,10 @@ with col1:
     prompt = st.chat_input("Frage stellen …")
     if prompt and st.session_state.pipeline:
         with st.spinner("Denke nach …"):
-            answer = st.session_state.pipeline.answer(prompt)
+            answer, chunks = st.session_state.pipeline.answer(prompt)
         
         # Add to chat history
-        st.session_state.chat_history.append((prompt, answer))
+        st.session_state.chat_history.append((prompt, answer, chunks))
         st.rerun()
 
 with col2:
