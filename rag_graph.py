@@ -56,7 +56,7 @@ class RAGPipeline:
             collection_name=self.collection_name,
             embedding_function=HuggingFaceEmbeddings(
             model_name=emb_mod),
-        ).as_retriever(k=rk)
+        ).as_retriever(search_kwargs={"k": rk})
 
         # ---- OpenRouter LLM ----
         self._llm = ChatOpenAI(
