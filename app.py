@@ -58,7 +58,7 @@ with st.sidebar:
                 cfg             = st.session_state.cfg,
             )
         st.rerun()
-
+    st.divider()
 
 # - Document Management
 with st.sidebar:
@@ -159,9 +159,11 @@ with col1:
         st.warning("Bitte wählen Sie ein Dokument aus der Seitenleiste oder laden Sie ein neues hoch.")
     
     # Display chat history
+    
     for i, (question, answer, chunks) in enumerate(st.session_state.chat_history):
         st.chat_message("user").write(question)
-        st.chat_message("assistant").write(answer)
+        with st.expander(f"Antwort:", expanded=True):
+                st.chat_message("assistant").write(answer)
         
         # Display retrieved chunks
         if chunks:
@@ -178,14 +180,14 @@ with col1:
                     st.divider()
         
         # Extract page numbers from answer and create clickable buttons
-        import re
-        page_matches = re.findall(r'Seite (\d+)', answer)
-        if page_matches:
-            st.write("**Zu Seiten springen:**")
-            for page_num in sorted(set(page_matches), key=int):  # sortiert und Duplikate entfernt
-                if st.button(f"Seite {page_num}", key=f"goto_page_{page_num}_{i}"):
-                    st.session_state.pdf_page = int(page_num)
-                    st.rerun()
+        #import re
+        #page_matches = re.findall(r'Seite (\d+)', answer)
+        #if page_matches:
+        #    st.write("**Zu Seiten springen:**")
+        #    for page_num in sorted(set(page_matches), key=int):  # sortiert und Duplikate entfernt
+        #        if st.button(f"Seite {page_num}", key=f"goto_page_{page_num}_{i}"):
+        #            st.session_state.pdf_page = int(page_num)
+        #            st.rerun()
 
     # Chat-Interaktion
     prompt = st.chat_input("Frage stellen …")
