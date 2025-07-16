@@ -30,6 +30,7 @@ class RAGPipeline:
 
     PROMPT = PromptTemplate.from_template(
         """Du bist ein hilfsreicher Experte für technische Dokumente. Beantworte die Frage ausführlich und detailliert basierend auf dem gegebenen Kontext.
+        Wenn die Information nicht im Kontext enthalten ist, gib an, dass du keine Informationen dazu hast. Unter keinen Umständen solltest du eine Antwort erfinden oder raten.
         Kontext:{context}
         Quellen:{sources}
         Frage: {question}

@@ -29,19 +29,20 @@ class DocumentIngestor:
                  chunk_size: int | None = None,
                  chunk_overlap: int | None = None,
                  model_name: str | None = None,
-                 cfg: RAGConfig | None = None) -> None:
-        
-        self.cfg = cfg or RAGConfig()
-        self.persist_dir = Path(persist_dir or self.cfg.db_dir)
-        self.persist_dir.mkdir(exist_ok=True)
-        self.pdfs_dir = Path("data"); self.pdfs_dir.mkdir(exist_ok=True)
-        cs = self.cfg.chunk_size
-        co = self.cfg.chunk_overlap
-        model_name = self.cfg.embedding_model
-        self._splitter = RecursiveCharacterTextSplitter(chunk_size=cs,
+                 cfg: RAGConfig | None = None
+                 ) -> None:
+                self.cfg = cfg or RAGConfig()
+                self.persist_dir = Path(persist_dir or self.cfg.db_dir)
+                self.persist_dir.mkdir(exist_ok=True)
+                self.pdfs_dir = Path("data"); self.pdfs_dir.mkdir(exist_ok=True)
+                cs = chunk_size if chunk_size is not None else self.cfg.chunk_size
+                co = chunk_overlap if chunk_overlap is not None else self.cfg.chunk_overlap
+                emb_model = model_name if model_name is not None else self.cfg.embedding_model
+                self._splitter = RecursiveCharacterTextSplitter(
+                                                        chunk_size=cs,
                                                         chunk_overlap=co,
                                                         separators=["\n\n", "\n", " ", ""])
-        self._embedding = HuggingFaceEmbeddings(model_name=model_name)
+                self._embedding = HuggingFaceEmbeddings(model_name=emb_model)
 
     def ingest(self, pdf: str | Path, collection: str | None = None) -> int:
         docs = PyPDFLoader(str(pdf)).load()
