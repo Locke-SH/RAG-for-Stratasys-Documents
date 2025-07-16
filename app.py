@@ -39,7 +39,7 @@ with st.sidebar:
     chunk_overlap  = st.number_input("Chunk Overlap",     0, 2048, _dflt("chunk_overlap",   64),  step=32)
     retrieval_k    = st.number_input("Retrieval k",       1,  20, _dflt("retrieval_k",      4))
     temperature    = st.slider      ("Temperature",    0.0, 2.0, _dflt("temperature",    0.3), 0.05)
-    llm_model      = st.text_input  ("LLM-Model",          _dflt("model_name",  "openai/o4-mini"))
+    llm_model      = st.text_input  ("LLM-Model",          _dflt("openrouter_model",  "openai/o4-mini"))
     #embed_model    = st.text_input  ("Embedding-Model",    _dflt("embedding_model", "sentence-transformers/all-MiniLM-L6-v2"))
 
     if st.button("Anwenden"):
@@ -49,7 +49,7 @@ with st.sidebar:
             chunk_overlap  = chunk_overlap,
             retrieval_k    = retrieval_k,
             temperature    = temperature,
-            model_name     = llm_model,
+            openrouter_model = llm_model,
             #embedding_model= embed_model,
             # Pflichtfelder, die du NICHT änderst, automatisch aus .env
         )
