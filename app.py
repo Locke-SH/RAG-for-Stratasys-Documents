@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-"""app.py – Streamlit Front-End für die OOP-RAG-Pipeline (OpenRouter)"""
-
 from __future__ import annotations
 
 import streamlit as st
@@ -12,8 +9,8 @@ from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # Grundlayout
-st.set_page_config(page_title="PDF-RAG (OpenRouter)", page_icon="📄", layout="wide")
-st.title("📄 Chat mit deinem PDF – OpenRouter Edition")
+st.set_page_config(page_title="PDF-RAG (OpenRouter)", page_icon="", layout="wide")
+st.title("PDF-Chat")
 
 # ---------------------------------------------------------------------------
 # Session-Singletons
@@ -31,7 +28,7 @@ if "chat_history" not in st.session_state:
 # ---------------------------------------------------------------------------
 # Sidebar - Document Management
 with st.sidebar:
-    st.header("📚 Dokument-Verwaltung")
+    st.header("Dokument-Verwaltung")
     
     # List existing collections
     collections = st.session_state.ingestor.list_collections()
@@ -42,7 +39,7 @@ with st.sidebar:
             col_btn, del_btn = st.columns([3, 1])
             
             with col_btn:
-                if st.button(f"📄 {collection}", key=f"select_{collection}"):
+                if st.button(f"{collection}", key=f"select_{collection}"):
                     st.session_state.selected_collection = collection
                     st.session_state.pipeline = RAGPipeline(collection_name=collection)
                     st.rerun()
@@ -54,10 +51,10 @@ with st.sidebar:
                         if st.session_state.selected_collection == collection:
                             st.session_state.selected_collection = None
                             st.session_state.pipeline = None
-                        st.success(f"✅ '{collection}' wurde gelöscht.")
+                        st.success(f"'{collection}' wurde gelöscht.")
                         st.rerun()
                     else:
-                        st.error(f"❌ Fehler beim Löschen von '{collection}'.")
+                        st.error(f"Fehler beim Löschen von '{collection}'.")
     else:
         st.info("Keine Dokumente in der Datenbank gefunden.")
     
@@ -91,7 +88,7 @@ with st.sidebar:
                 n_chunks = st.session_state.ingestor.ingest(tmp_path, collection)
                 st.session_state.pipeline = RAGPipeline(collection_name=collection)
                 st.session_state.selected_collection = collection
-            st.success(f"✅ {n_chunks} Chunks indiziert als '{collection}'.")
+            st.success(f"{n_chunks} Chunks indiziert als '{collection}'.")
             st.rerun()
 
 # ---------------------------------------------------------------------------
@@ -99,7 +96,7 @@ with st.sidebar:
 col1, col2 = st.columns([1, 1])
 
 with col1:
-    st.header("💬 Chat")
+    st.header("Chat")
     
     # Show current document
     if st.session_state.selected_collection:
@@ -117,12 +114,10 @@ with col1:
         page_matches = re.findall(r'Seite (\d+)', answer)
         if page_matches:
             st.write("**Zu Seiten springen:**")
-            cols = st.columns(len(page_matches))
-            for j, page_num in enumerate(set(page_matches)):  # Remove duplicates
-                with cols[j % len(cols)]:
-                    if st.button(f"📄 Seite {page_num}", key=f"goto_page_{i}_{page_num}"):
-                        st.session_state.pdf_page = int(page_num)
-                        st.rerun()
+            for page_num in sorted(set(page_matches), key=int):  # sortiert und Duplikate entfernt
+                if st.button(f"Seite {page_num}", key=f"goto_page_{page_num}"):
+                    st.session_state.pdf_page = int(page_num)
+                    st.rerun()
 
     # Chat-Interaktion
     prompt = st.chat_input("Frage stellen …")
@@ -135,7 +130,7 @@ with col1:
         st.rerun()
 
 with col2:
-    st.header("📄 PDF Viewer")
+    st.header("PDF Viewer")
     
     if st.session_state.selected_collection:
         pdf_path = st.session_state.ingestor.get_pdf_path(st.session_state.selected_collection)
@@ -147,7 +142,7 @@ with col2:
             
             # Display PDF using streamlit-pdf-viewer
             st.write("**PDF Dokument:**")
-            st.write(f"📄 **{st.session_state.selected_collection}.pdf**")
+            st.write(f" **{st.session_state.selected_collection}.pdf**")
             
             # Use streamlit-pdf-viewer for better PDF display
             # Force re-render by changing key when page changes
@@ -155,8 +150,8 @@ with col2:
             
             pdf_viewer(
                 input=pdf_bytes,
-                width=700,
-                height=600,
+                width=500,
+                height=700,
                 key=viewer_key,
                 pages_to_render=[st.session_state.pdf_page],  # Only render current page
                 render_text=True
@@ -167,12 +162,12 @@ with col2:
             col_prev, col_next, col_goto = st.columns([1, 1, 2])
             
             with col_prev:
-                if st.button("⬅️ Vorherige", disabled=st.session_state.pdf_page <= 1):
+                if st.button("Vorherige", disabled=st.session_state.pdf_page <= 1):
                     st.session_state.pdf_page = max(1, st.session_state.pdf_page - 1)
                     st.rerun()
             
             with col_next:
-                if st.button("➡️ Nächste"):
+                if st.button("Nächste"):
                     st.session_state.pdf_page += 1
                     st.rerun()
             
@@ -187,7 +182,7 @@ with col2:
             
             # Download button
             st.download_button(
-                label="📥 PDF herunterladen",
+                label="PDF herunterladen",
                 data=pdf_bytes,
                 file_name=f"{st.session_state.selected_collection}.pdf",
                 mime="application/pdf"

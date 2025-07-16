@@ -1,6 +1,6 @@
 OPENROUTER_API_KEY="sk-or-v1-..."
 OPENROUTER_BASE_URL="https://openrouter.ai/api/v1"
-OPENROUTER_MODEL="google/gemini-2.5-flash-preview:thinking"
+OPENROUTER_MODEL="openai/o4-mini"
 
 EMBEDDING_MODEL="text-embedding-3-small"
 DB_DIR="db"

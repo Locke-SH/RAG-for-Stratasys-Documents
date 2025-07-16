@@ -15,15 +15,15 @@ from langchain_openai import ChatOpenAI
 load_dotenv()
 
 # Environment
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 if not OPENROUTER_API_KEY:
-    raise EnvironmentError("OPENROUTER_API_KEY (or OPENAI_API_KEY) is missing")
+    raise EnvironmentError("OPENROUTER_API_KEY is missing")
 
 OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-MODEL_NAME = os.getenv("OPENROUTER_MODEL", "mistralai/mistral-medium")
-DB_DIR = os.getenv("DB_DIR", "db")
-K = int(os.getenv("RETRIEVAL_K", "4"))
-TEMPERATURE = float(os.getenv("TEMPERATURE", "0.3"))
+MODEL_NAME = os.getenv("OPENROUTER_MODEL")
+DB_DIR = os.getenv("DB_DIR")
+K = int(os.getenv("RETRIEVAL_K"))
+TEMPERATURE = float(os.getenv("TEMPERATURE"))
 
 
 # LangGraph state

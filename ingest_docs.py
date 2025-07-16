@@ -3,7 +3,7 @@ import argparse, os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
@@ -34,8 +34,8 @@ class DocumentIngestor:
                  model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
         self.persist_dir = Path(persist_dir); self.persist_dir.mkdir(exist_ok=True)
         self.pdfs_dir = Path("data"); self.pdfs_dir.mkdir(exist_ok=True)
-        cs = chunk_size or int(os.getenv("CHUNK_SIZE", "1024"))
-        co = chunk_overlap or int(os.getenv("CHUNK_OVERLAP", "64"))
+        cs = chunk_size or int(os.getenv("CHUNK_SIZE"))
+        co = chunk_overlap or int(os.getenv("CHUNK_OVERLAP"))
         self._splitter = RecursiveCharacterTextSplitter(chunk_size=cs,
                                                         chunk_overlap=co,
                                                         separators=["\n\n", "\n", " ", ""])
@@ -104,7 +104,7 @@ class DocumentIngestor:
             return f"./data/{collection_name}.pdf"
         return None
 
-
+"""
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest a PDF into Chroma DB")
     parser.add_argument("pdf", help="Path to PDF file")
@@ -115,3 +115,12 @@ if __name__ == "__main__":
     ingestor = DocumentIngestor(args.db)
     n = ingestor.ingest(args.pdf, args.collection)
     print(f"Indexed {n} chunks from {args.pdf}")
+"""
+
+if __name__ == "__main__":
+    ingestor = DocumentIngestor()
+    collections = ingestor.list_collections()
+    print("Verfügbare Collections:")
+    for c in collections:
+        print(f"- {c}")
+
