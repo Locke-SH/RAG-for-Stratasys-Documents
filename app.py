@@ -1,11 +1,10 @@
 from __future__ import annotations
-
 import streamlit as st
 from streamlit_pdf_viewer import pdf_viewer
-
 from ingest_docs import DocumentIngestor
 from rag_graph import RAGPipeline
 from pathlib import Path
+from config import RAGConfig
 
 # ---------------------------------------------------------------------------
 # Grundlayout
@@ -14,10 +13,12 @@ st.title("PDF-Chat")
 
 # ---------------------------------------------------------------------------
 # Session-Singletons
+if "cfg" not in st.session_state:
+    st.session_state.cfg = RAGConfig()
 if "ingestor" not in st.session_state:
-    st.session_state.ingestor = DocumentIngestor()   # nutzt .env-Chunk-Settings
+    st.session_state.ingestor = DocumentIngestor(cfg=st.session_state.cfg)
 if "pipeline" not in st.session_state:
-    st.session_state.pipeline = None                 # wird nach Ingestion gebaut
+    st.session_state.pipeline = None
 if "selected_collection" not in st.session_state:
     st.session_state.selected_collection = None
 if "pdf_page" not in st.session_state:
@@ -29,10 +30,8 @@ if "chat_history" not in st.session_state:
 # Sidebar - Document Management
 with st.sidebar:
     st.header("Dokument-Verwaltung")
-    
     # List existing collections
     collections = st.session_state.ingestor.list_collections()
-    
     if collections:
         st.subheader("Vorhandene Dokumente")
         for collection in collections:

@@ -4,27 +4,14 @@ import os
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from dotenv import load_dotenv
+
 
 from langchain.prompts import PromptTemplate
 from langgraph.graph import StateGraph
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
-
-load_dotenv()
-
-# Environment
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-if not OPENROUTER_API_KEY:
-    raise EnvironmentError("OPENROUTER_API_KEY is missing")
-
-OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-MODEL_NAME = os.getenv("OPENROUTER_MODEL")
-DB_DIR = os.getenv("DB_DIR")
-K = int(os.getenv("RETRIEVAL_K"))
-TEMPERATURE = float(os.getenv("TEMPERATURE"))
-
+from config import RAGConfig
 
 # LangGraph state
 @dataclass
@@ -41,42 +28,34 @@ class RAGPipeline:
 
     PROMPT = PromptTemplate.from_template(
         """Du bist ein hilfsreicher Experte für technische Dokumente. Beantworte die Frage ausführlich und detailliert basierend auf dem gegebenen Kontext.
-
-Kontext:
-{context}
-
-Quellen:
-{sources}
-
-Frage: {question}
-
-Antwort: Gib eine vollständige und detaillierte Antwort auf Deutsch. Erkläre alle relevanten Aspekte und verwende konkrete Informationen aus dem Kontext. Gib am Ende der Antwort die Quellen an (Seiten), wo die Informationen gefunden wurden."""
+        Kontext:{context}
+        Quellen:{sources}
+        Frage: {question}
+        Antwort: Gib eine vollständige und detaillierte Antwort auf Deutsch. Erkläre alle relevanten Aspekte und verwende konkrete Informationen aus dem Kontext. Gib am Ende der Antwort die Quellen an (Seiten), wo die Informationen gefunden wurden."""
     )
 
     def __init__(
-        self,
-        db_dir: str = DB_DIR,
+        self, 
         collection_name: str | None = None,
-        k: int = K,
-        model_name: str = MODEL_NAME,
-        temperature: float = TEMPERATURE,
+        cfg: RAGConfig | None = None
     ) -> None:
-        collection_name = collection_name or "default" 
-        # Retriever
+        self.cfg = cfg or RAGConfig()
+        self.collection_name = collection_name or "default" 
+        # ---- Retriever ----
         self._retriever = Chroma(
-            persist_directory=db_dir,
-            collection_name=collection_name,
-            embedding_function=HuggingFaceEmbeddings(                # <—
-                model_name="sentence-transformers/all-MiniLM-L6-v2"),
-        ).as_retriever(k=k)
+            persist_directory=str(self.cfg.db_dir),
+            collection_name=self.collection_name,
+            embedding_function=HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2"),
+        ).as_retriever(k=self.cfg.retrieval_k)
 
-        # OpenRouter LLM
+        # ---- OpenRouter LLM ----
         self._llm = ChatOpenAI(
-            model_name=model_name,
-            openai_api_key=OPENROUTER_API_KEY,
-            openai_api_base=OPENROUTER_BASE_URL,
-            temperature=temperature,
-            request_timeout=90,
+            openrouter_model=self.cfg.openrouter_model,
+            openai_api_key  =self.cfg.openrouter_api_key,
+            openai_api_base =self.cfg.openrouter_base_url,
+            temperature     =self.cfg.temperature,
+            request_timeout =self.cfg.request_timeout
         )
         self._graph = self._build_graph()
 
