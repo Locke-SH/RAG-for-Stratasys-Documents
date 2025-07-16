@@ -16,6 +16,7 @@ class RAGConfig(BaseSettings):
     chunk_size: int = Field(1024, env="CHUNK_SIZE")
     chunk_overlap: int = Field(64, env="CHUNK_OVERLAP")
     request_timeout: int = Field(90, env="REQUEST_TIMEOUT")
+    embedding_model: str = Field("sentence-transformers/all-MiniLM-L6-v2", env="EMBEDDING_MODEL")
 
 
     # -------- Meta / SettingsConfigDict ----------------------------------------
