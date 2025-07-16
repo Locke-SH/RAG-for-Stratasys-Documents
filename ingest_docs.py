@@ -1,5 +1,4 @@
 from __future__ import annotations
-import argparse, os
 from pathlib import Path
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
@@ -26,14 +25,15 @@ class DocumentIngestor:
         return sanitized
 
     def __init__(self, 
-                 persist_dir: str | Path = "db",
+                 persist_dir: str | Path | None = None,
                  chunk_size: int | None = None,
                  chunk_overlap: int | None = None,
                  model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
                  cfg: RAGConfig | None = None) -> None:
         
         self.cfg = cfg or RAGConfig()
-        self.persist_dir = Path(persist_dir); self.persist_dir.mkdir(exist_ok=True)
+        self.persist_dir = Path(persist_dir or self.cfg.db_dir)
+        self.persist_dir.mkdir(exist_ok=True)
         self.pdfs_dir = Path("data"); self.pdfs_dir.mkdir(exist_ok=True)
         cs = self.cfg.chunk_size
         co = self.cfg.chunk_overlap

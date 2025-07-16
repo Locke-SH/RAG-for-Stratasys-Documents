@@ -7,8 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class RAGConfig(BaseSettings):
     
     """Configuration for the RAG pipeline."""
-    openrouter_api_key: str = Field(..., env="OPENROUTER_API_KEY")
-    openrouter_model: str = Field(..., env="OPENROUTER_MODEL")
+    openrouter_api_key: str = Field(default="", env="OPENROUTER_API_KEY")
+    openrouter_model: str = Field(default="openai/gpt-3.5-turbo", env="OPENROUTER_MODEL")
     openrouter_base_url: str = Field("https://openrouter.ai/api/v1", env="OPENROUTER_BASE_URL")
     db_dir: str = Field("db", env="DB_DIR")
     retrieval_k: int = Field(5, env="RETRIEVAL_K")

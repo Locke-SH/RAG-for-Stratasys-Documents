@@ -51,11 +51,11 @@ class RAGPipeline:
 
         # ---- OpenRouter LLM ----
         self._llm = ChatOpenAI(
-            openrouter_model=self.cfg.openrouter_model,
-            openai_api_key  =self.cfg.openrouter_api_key,
-            openai_api_base =self.cfg.openrouter_base_url,
-            temperature     =self.cfg.temperature,
-            request_timeout =self.cfg.request_timeout
+            model=self.cfg.openrouter_model,
+            api_key=self.cfg.openrouter_api_key,
+            base_url=self.cfg.openrouter_base_url,
+            temperature=self.cfg.temperature,
+            timeout=self.cfg.request_timeout
         )
         self._graph = self._build_graph()
 

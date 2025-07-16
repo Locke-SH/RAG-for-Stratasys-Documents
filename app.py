@@ -40,7 +40,7 @@ with st.sidebar:
             with col_btn:
                 if st.button(f"{collection}", key=f"select_{collection}"):
                     st.session_state.selected_collection = collection
-                    st.session_state.pipeline = RAGPipeline(collection_name=collection)
+                    st.session_state.pipeline = RAGPipeline(collection_name=collection, cfg=st.session_state.cfg)
                     st.rerun()
             
             with del_btn:
@@ -80,15 +80,18 @@ with st.sidebar:
                 st.warning(f"Collection Name wurde angepasst zu: '{collection}'")
             
             with st.spinner("Indexiere Dokument …"):
-                tmp_path = "/tmp/upload.pdf"
-                with open(tmp_path, "wb") as f:
-                    f.write(uploaded.getbuffer())
+                try:
+                    tmp_path = "/tmp/upload.pdf"
+                    with open(tmp_path, "wb") as f:
+                        f.write(uploaded.getbuffer())
 
-                n_chunks = st.session_state.ingestor.ingest(tmp_path, collection)
-                st.session_state.pipeline = RAGPipeline(collection_name=collection)
-                st.session_state.selected_collection = collection
-            st.success(f"{n_chunks} Chunks indiziert als '{collection}'.")
-            st.rerun()
+                    n_chunks = st.session_state.ingestor.ingest(tmp_path, collection)
+                    st.session_state.pipeline = RAGPipeline(collection_name=collection, cfg=st.session_state.cfg)
+                    st.session_state.selected_collection = collection
+                    st.success(f"{n_chunks} Chunks indiziert als '{collection}'.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Fehler beim Indexieren: {str(e)}")
 
 # ---------------------------------------------------------------------------
 # Main Content Area
@@ -135,9 +138,17 @@ with col2:
         pdf_path = st.session_state.ingestor.get_pdf_path(st.session_state.selected_collection)
         
         if pdf_path and pdf_path.exists():
-            # Read PDF file
-            with open(pdf_path, "rb") as f:
-                pdf_bytes = f.read()
+            try:
+                # Read PDF file
+                with open(pdf_path, "rb") as f:
+                    pdf_bytes = f.read()
+            except Exception as e:
+                st.error(f"Fehler beim Laden der PDF: {str(e)}")
+                pdf_bytes = None
+        else:
+            pdf_bytes = None
+        
+        if pdf_bytes:
             
             # Display PDF using streamlit-pdf-viewer
             st.write("**PDF Dokument:**")
@@ -176,17 +187,16 @@ with col2:
                     st.session_state.pdf_page = page_input
                     st.rerun()
             
-            # Show PDF info
-            st.write(f"**Dateigröße:** {len(pdf_bytes) / 1024:.1f} KB")
-            
-            # Download button
-            st.download_button(
-                label="PDF herunterladen",
-                data=pdf_bytes,
-                file_name=f"{st.session_state.selected_collection}.pdf",
-                mime="application/pdf"
-            )
-            
+                # Show PDF info
+                st.write(f"**Dateigröße:** {len(pdf_bytes) / 1024:.1f} KB")
+                
+                # Download button
+                st.download_button(
+                    label="PDF herunterladen",
+                    data=pdf_bytes,
+                    file_name=f"{st.session_state.selected_collection}.pdf",
+                    mime="application/pdf"
+                )
         else:
             st.warning("PDF-Datei nicht gefunden. Das Dokument wurde möglicherweise vor der PDF-Speicher-Funktion hochgeladen.")
     else:
