@@ -208,15 +208,6 @@ with col1:
                     )
                     st.divider()
         
-        # Extract page numbers from answer and create clickable buttons
-        #import re
-        #page_matches = re.findall(r'Seite (\d+)', answer)
-        #if page_matches:
-        #    st.write("**Zu Seiten springen:**")
-        #    for page_num in sorted(set(page_matches), key=int):  # sortiert und Duplikate entfernt
-        #        if st.button(f"Seite {page_num}", key=f"goto_page_{page_num}_{i}"):
-        #            st.session_state.pdf_page = int(page_num)
-        #            st.rerun()
 
     # Chat-Interaktion
     prompt = st.chat_input("Frage stellen …")
