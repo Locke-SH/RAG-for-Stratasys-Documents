@@ -35,8 +35,6 @@ with st.sidebar:
     def _dflt(name, fallback):
         return st.session_state.get(name, getattr(st.session_state.cfg, name, fallback))
 
-    chunk_size     = st.number_input("Chunk Size",     256, 4096,  _dflt("chunk_size",     1024), step=256)
-    chunk_overlap  = st.number_input("Chunk Overlap",     0, 2048, _dflt("chunk_overlap",   64),  step=32)
     retrieval_k    = st.number_input("Retrieval k",       1,  20, _dflt("retrieval_k",      4))
     temperature    = st.slider      ("Temperature",    0.0, 2.0, _dflt("temperature",    0.3), 0.05)
     llm_model      = st.text_input  ("LLM-Model",          _dflt("openrouter_model",  "openai/o4-mini"))
@@ -45,8 +43,6 @@ with st.sidebar:
     if st.button("Anwenden"):
         # 2a – neue Config zusammenbauen
         st.session_state.cfg = RAGConfig(
-            chunk_size     = chunk_size,
-            chunk_overlap  = chunk_overlap,
             retrieval_k    = retrieval_k,
             temperature    = temperature,
             openrouter_model = llm_model,
@@ -101,6 +97,10 @@ with st.sidebar:
     uploaded = st.file_uploader("PDF hochladen", type="pdf")
     
     if uploaded:
+        # Chunk settings for this document
+        chunk_size = st.number_input("Chunk Size", 256, 4096, _dflt("chunk_size", 1024), step=256)
+        chunk_overlap = st.number_input("Chunk Overlap", 0, 2048, _dflt("chunk_overlap", 64), step=32)
+        
         # Show suggested collection name and allow editing
         suggested_name = st.session_state.ingestor.sanitize_collection_name(Path(uploaded.name).stem)
         collection_name = st.text_input(
@@ -118,14 +118,27 @@ with st.sidebar:
             
             with st.spinner("Indexiere Dokument …"):
                 try:
+                    # Create a temporary config with the chunk settings for this document
+                    upload_cfg = RAGConfig(
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
+                        # Keep other settings from current config
+                        retrieval_k=st.session_state.cfg.retrieval_k,
+                        temperature=st.session_state.cfg.temperature,
+                        openrouter_model=st.session_state.cfg.openrouter_model,
+                    )
+                    
+                    # Create temporary ingestor with upload config
+                    upload_ingestor = DocumentIngestor(cfg=upload_cfg)
+                    
                     tmp_path = "/tmp/upload.pdf"
                     with open(tmp_path, "wb") as f:
                         f.write(uploaded.getbuffer())
 
-                    n_chunks = st.session_state.ingestor.ingest(tmp_path, collection)
+                    n_chunks = upload_ingestor.ingest(tmp_path, collection)
                     st.session_state.pipeline = RAGPipeline(collection_name=collection, cfg=st.session_state.cfg)
                     st.session_state.selected_collection = collection
-                    st.success(f"{n_chunks} Chunks indiziert als '{collection}'.")
+                    st.success(f"{n_chunks} Chunks indiziert als '{collection}' (Chunk Size: {chunk_size}, Overlap: {chunk_overlap}).")
                     st.rerun()
                 except Exception as e:
                     st.error(f"Fehler beim Indexieren: {str(e)}")
