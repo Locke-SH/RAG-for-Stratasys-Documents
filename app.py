@@ -135,7 +135,7 @@ with st.sidebar:
                         f.write(uploaded.getbuffer())
 
                     n_chunks = current_ingestor.ingest(tmp_path, collection)
-                    st.session_state.pipeline = RAGPipeline(collection_name=collection, cfg=current_cfg)
+                    st.session_state.pipeline = RAGPipeline(collection_name=collection, cfg=st.session_state.cfg)
                     st.session_state.selected_collection = collection
                     st.session_state.cfg = current_cfg
                     st.session_state.ingestor = current_ingestor

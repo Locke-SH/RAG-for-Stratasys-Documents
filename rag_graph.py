@@ -39,27 +39,16 @@ class RAGPipeline:
         self, 
         *,
         collection_name: str | None = None,
-        retrieval_k: int | None = None,
-        temperature: float | None = None,
-        model_name: str | None = None,
-        embedding_model: str | None = None,
         cfg: RAGConfig | None = None,
     ) -> None:
         self.cfg = cfg or RAGConfig()
         self.collection_name = collection_name or "default"
         
-        # Store override parameters
-        self._retrieval_k_override = retrieval_k
-        self._temperature_override = temperature
-        self._model_name_override = model_name
-        self._embedding_model_override = embedding_model
-        
         # Initialize base retriever (will be updated dynamically)
-        emb_mod = embedding_model if embedding_model is not None else self.cfg.embedding_model
         self._chroma = Chroma(
             persist_directory=self.cfg.db_dir,
             collection_name=self.collection_name,
-            embedding_function=HuggingFaceEmbeddings(model_name=emb_mod),
+            embedding_function=HuggingFaceEmbeddings(model_name=self.cfg.embedding_model),
         )
         
         self._graph = self._build_graph()
@@ -69,9 +58,8 @@ class RAGPipeline:
         graph = StateGraph(QAState)
 
         def retrieve_node(state: QAState) -> QAState:
-            # Get current k value from config
-            rk = self._retrieval_k_override if self._retrieval_k_override is not None else self.cfg.retrieval_k
-            retriever = self._chroma.as_retriever(search_kwargs={"k": rk})
+            # Always read current k value from config
+            retriever = self._chroma.as_retriever(search_kwargs={"k": self.cfg.retrieval_k})
             docs = retriever.invoke(state.question) 
             state.context = [d.page_content for d in docs]
             # Extract page information from metadata
@@ -97,16 +85,12 @@ class RAGPipeline:
             return state
 
         def generate_node(state: QAState) -> QAState:
-            # Get current values from config
-            temp = self._temperature_override if self._temperature_override is not None else self.cfg.temperature
-            llm_mod = self._model_name_override if self._model_name_override is not None else self.cfg.openrouter_model
-            
-            # Create LLM with current config values
+            # Always read current values from config
             llm = ChatOpenAI(
-                model=llm_mod,
+                model=self.cfg.openrouter_model,
                 api_key=self.cfg.openrouter_api_key,
                 base_url=self.cfg.openrouter_base_url,
-                temperature=temp,
+                temperature=self.cfg.temperature,
                 timeout=self.cfg.request_timeout
             )
             response = llm.invoke(self.PROMPT.format(**state.__dict__))
