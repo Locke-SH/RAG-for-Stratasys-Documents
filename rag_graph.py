@@ -48,7 +48,7 @@ class RAGPipeline:
         self.cfg = cfg or RAGConfig()
         rk      = retrieval_k    if retrieval_k    is not None else self.cfg.retrieval_k
         temp    = temperature    if temperature    is not None else self.cfg.temperature
-        llm_mod = model_name     if model_name     is not None else self.cfg.model_name
+        llm_mod = model_name     if model_name     is not None else self.cfg.openrouter_model
         emb_mod = embedding_model if embedding_model is not None else self.cfg.embedding_model
         self.collection_name = collection_name or "default" 
         self._retriever = Chroma(
