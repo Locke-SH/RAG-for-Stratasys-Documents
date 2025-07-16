@@ -46,26 +46,22 @@ class RAGPipeline:
         cfg: RAGConfig | None = None,
     ) -> None:
         self.cfg = cfg or RAGConfig()
-        rk      = retrieval_k    if retrieval_k    is not None else self.cfg.retrieval_k
-        temp    = temperature    if temperature    is not None else self.cfg.temperature
-        llm_mod = model_name     if model_name     is not None else self.cfg.openrouter_model
+        self.collection_name = collection_name or "default"
+        
+        # Store override parameters
+        self._retrieval_k_override = retrieval_k
+        self._temperature_override = temperature
+        self._model_name_override = model_name
+        self._embedding_model_override = embedding_model
+        
+        # Initialize base retriever (will be updated dynamically)
         emb_mod = embedding_model if embedding_model is not None else self.cfg.embedding_model
-        self.collection_name = collection_name or "default" 
-        self._retriever = Chroma(
+        self._chroma = Chroma(
             persist_directory=self.cfg.db_dir,
             collection_name=self.collection_name,
-            embedding_function=HuggingFaceEmbeddings(
-            model_name=emb_mod),
-        ).as_retriever(search_kwargs={"k": rk})
-
-        # ---- OpenRouter LLM ----
-        self._llm = ChatOpenAI(
-            model=llm_mod,
-            api_key=self.cfg.openrouter_api_key,
-            base_url=self.cfg.openrouter_base_url,
-            temperature=temp,
-            timeout=self.cfg.request_timeout
+            embedding_function=HuggingFaceEmbeddings(model_name=emb_mod),
         )
+        
         self._graph = self._build_graph()
 
 
@@ -73,7 +69,10 @@ class RAGPipeline:
         graph = StateGraph(QAState)
 
         def retrieve_node(state: QAState) -> QAState:
-            docs = self._retriever.invoke(state.question) 
+            # Get current k value from config
+            rk = self._retrieval_k_override if self._retrieval_k_override is not None else self.cfg.retrieval_k
+            retriever = self._chroma.as_retriever(search_kwargs={"k": rk})
+            docs = retriever.invoke(state.question) 
             state.context = [d.page_content for d in docs]
             # Extract page information from metadata
             sources = []
@@ -98,7 +97,19 @@ class RAGPipeline:
             return state
 
         def generate_node(state: QAState) -> QAState:
-            response = self._llm.invoke(self.PROMPT.format(**state.__dict__))
+            # Get current values from config
+            temp = self._temperature_override if self._temperature_override is not None else self.cfg.temperature
+            llm_mod = self._model_name_override if self._model_name_override is not None else self.cfg.openrouter_model
+            
+            # Create LLM with current config values
+            llm = ChatOpenAI(
+                model=llm_mod,
+                api_key=self.cfg.openrouter_api_key,
+                base_url=self.cfg.openrouter_base_url,
+                temperature=temp,
+                timeout=self.cfg.request_timeout
+            )
+            response = llm.invoke(self.PROMPT.format(**state.__dict__))
             state.answer = response.content
             return state
 
