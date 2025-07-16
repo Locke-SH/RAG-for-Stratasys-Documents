@@ -118,13 +118,27 @@ with st.sidebar:
             
             with st.spinner("Indexiere Dokument …"):
                 try:
+                    # Create a new config with current UI values
+                    current_cfg = RAGConfig(
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
+                        retrieval_k=retrieval_k,
+                        temperature=temperature,
+                        openrouter_model=llm_model,
+                    )
+                    
+                    # Create a new ingestor with current config
+                    current_ingestor = DocumentIngestor(cfg=current_cfg)
+                    
                     tmp_path = "/tmp/upload.pdf"
                     with open(tmp_path, "wb") as f:
                         f.write(uploaded.getbuffer())
 
-                    n_chunks = st.session_state.ingestor.ingest(tmp_path, collection)
-                    st.session_state.pipeline = RAGPipeline(collection_name=collection, cfg=st.session_state.cfg)
+                    n_chunks = current_ingestor.ingest(tmp_path, collection)
+                    st.session_state.pipeline = RAGPipeline(collection_name=collection, cfg=current_cfg)
                     st.session_state.selected_collection = collection
+                    st.session_state.cfg = current_cfg
+                    st.session_state.ingestor = current_ingestor
                     st.success(f"{n_chunks} Chunks indiziert als '{collection}'.")
                     st.rerun()
                 except Exception as e:
