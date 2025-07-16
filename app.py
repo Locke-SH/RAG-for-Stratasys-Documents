@@ -160,10 +160,20 @@ with col1:
     
     # Display chat history
     
-    for i, (question, answer, chunks) in enumerate(st.session_state.chat_history):
+    for i, (question, answer, chunks, llm_prompt) in enumerate(st.session_state.chat_history):
         st.chat_message("user").write(question)
         with st.expander(f"Antwort:", expanded=True):
                 st.chat_message("assistant").write(answer)
+        
+        # Display the LLM prompt
+        with st.expander(f"🤖 An LLM gesendeter Prompt", expanded=False):
+            st.text_area(
+                "Vollständiger Prompt:",
+                value=llm_prompt,
+                height=300,
+                key=f"prompt_{i}",
+                disabled=True
+            )
         
         # Display retrieved chunks
         if chunks:
@@ -193,10 +203,10 @@ with col1:
     prompt = st.chat_input("Frage stellen …")
     if prompt and st.session_state.pipeline:
         with st.spinner("Denke nach …"):
-            answer, chunks = st.session_state.pipeline.answer(prompt)
+            answer, chunks, llm_prompt = st.session_state.pipeline.answer(prompt)
         
         # Add to chat history
-        st.session_state.chat_history.append((prompt, answer, chunks))
+        st.session_state.chat_history.append((prompt, answer, chunks, llm_prompt))
         st.rerun()
 
 with col2:

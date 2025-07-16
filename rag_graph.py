@@ -21,6 +21,7 @@ class QAState:
     sources: List[str] = field(default_factory=list)
     answer: Optional[str] = None
     chunks: List[dict] = field(default_factory=list)
+    llm_prompt: Optional[str] = None
 
 
 # RAGPipeline class
@@ -93,7 +94,10 @@ class RAGPipeline:
                 temperature=self.cfg.temperature,
                 timeout=self.cfg.request_timeout
             )
-            response = llm.invoke(self.PROMPT.format(**state.__dict__))
+            # Format the prompt and store it
+            formatted_prompt = self.PROMPT.format(**state.__dict__)
+            state.llm_prompt = formatted_prompt
+            response = llm.invoke(formatted_prompt)
             state.answer = response.content
             return state
 
@@ -105,9 +109,9 @@ class RAGPipeline:
         return graph.compile()
 
 
-    def answer(self, question: str) -> tuple[str, List[dict]]:
+    def answer(self, question: str) -> tuple[str, List[dict], str]:
         result = self._graph.invoke({"question": question})
-        return result["answer"], result["chunks"]
+        return result["answer"], result["chunks"], result["llm_prompt"]
     
     ask = answer 
 
