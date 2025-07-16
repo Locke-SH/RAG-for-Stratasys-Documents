@@ -207,7 +207,6 @@ with col1:
                         disabled=True
                     )
                     st.divider()
-        
 
     # Chat-Interaktion
     prompt = st.chat_input("Frage stellen …")
@@ -244,7 +243,6 @@ with col2:
             pdf_bytes = None
         
         if pdf_bytes:
-            
             # Display PDF using streamlit-pdf-viewer
             st.write("**PDF Dokument:**")
             st.write(f" **{st.session_state.selected_collection}.pdf**")
@@ -282,16 +280,16 @@ with col2:
                     st.session_state.pdf_page = page_input
                     st.rerun()
             
-                # Show PDF info
-                st.write(f"**Dateigröße:** {len(pdf_bytes) / 1024:.1f} KB")
-                
-                # Download button
-                st.download_button(
-                    label="PDF herunterladen",
-                    data=pdf_bytes,
-                    file_name=f"{st.session_state.selected_collection}.pdf",
-                    mime="application/pdf"
-                )
+            # Show PDF info
+            st.write(f"**Dateigröße:** {len(pdf_bytes) / 1024:.1f} KB")
+            
+            # Download button
+            st.download_button(
+                label="PDF herunterladen",
+                data=pdf_bytes,
+                file_name=f"{st.session_state.selected_collection}.pdf",
+                mime="application/pdf"
+            )
         else:
             st.warning("PDF-Datei nicht gefunden. Das Dokument wurde möglicherweise vor der PDF-Speicher-Funktion hochgeladen.")
     else:
