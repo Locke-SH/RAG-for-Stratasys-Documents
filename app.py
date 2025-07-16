@@ -27,7 +27,44 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 # ---------------------------------------------------------------------------
-# Sidebar - Document Management
+# Sidebar 
+with st.sidebar:
+    st.header("Parameter")
+
+    # initiale Defaults aus cfg oder Session
+    def _dflt(name, fallback):
+        return st.session_state.get(name, getattr(st.session_state.cfg, name, fallback))
+
+    chunk_size     = st.number_input("Chunk Size",     256, 4096,  _dflt("chunk_size",     1024), step=256)
+    chunk_overlap  = st.number_input("Chunk Overlap",     0, 2048, _dflt("chunk_overlap",   64),  step=32)
+    retrieval_k    = st.number_input("Retrieval k",       1,  20, _dflt("retrieval_k",      4))
+    temperature    = st.slider      ("Temperature",    0.0, 2.0, _dflt("temperature",    0.3), 0.05)
+    llm_model      = st.text_input  ("LLM-Model",          _dflt("model_name",  "openai/o4-mini"))
+    #embed_model    = st.text_input  ("Embedding-Model",    _dflt("embedding_model", "sentence-transformers/all-MiniLM-L6-v2"))
+
+    if st.button("Anwenden"):
+        # 2a – neue Config zusammenbauen
+        st.session_state.cfg = RAGConfig(
+            chunk_size     = chunk_size,
+            chunk_overlap  = chunk_overlap,
+            retrieval_k    = retrieval_k,
+            temperature    = temperature,
+            model_name     = llm_model,
+            #embedding_model= embed_model,
+            # Pflichtfelder, die du NICHT änderst, automatisch aus .env
+        )
+
+        # 2b – Ingestor & Pipeline neu instanziieren
+        st.session_state.ingestor = DocumentIngestor(cfg=st.session_state.cfg)
+        if st.session_state.selected_collection:
+            st.session_state.pipeline = RAGPipeline(
+                collection_name = st.session_state.selected_collection,
+                cfg             = st.session_state.cfg,
+            )
+        st.rerun()
+
+
+# - Document Management
 with st.sidebar:
     st.header("Dokument-Verwaltung")
     # List existing collections

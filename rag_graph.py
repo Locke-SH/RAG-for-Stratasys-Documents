@@ -36,25 +36,33 @@ class RAGPipeline:
 
     def __init__(
         self, 
+        *,
         collection_name: str | None = None,
-        cfg: RAGConfig | None = None
+        retrieval_k: int | None = None,
+        temperature: float | None = None,
+        model_name: str | None = None,
+        embedding_model: str | None = None,
+        cfg: RAGConfig | None = None,
     ) -> None:
         self.cfg = cfg or RAGConfig()
+        rk      = retrieval_k    if retrieval_k    is not None else self.cfg.retrieval_k
+        temp    = temperature    if temperature    is not None else self.cfg.temperature
+        llm_mod = model_name     if model_name     is not None else self.cfg.model_name
+        emb_mod = embedding_model if embedding_model is not None else self.cfg.embedding_model
         self.collection_name = collection_name or "default" 
-        # ---- Retriever ----
         self._retriever = Chroma(
             persist_directory=self.cfg.db_dir,
             collection_name=self.collection_name,
             embedding_function=HuggingFaceEmbeddings(
-            model_name=self.cfg.embedding_model),
-        ).as_retriever(k=self.cfg.retrieval_k)
+            model_name=emb_mod),
+        ).as_retriever(k=rk)
 
         # ---- OpenRouter LLM ----
         self._llm = ChatOpenAI(
-            model=self.cfg.openrouter_model,
+            model=llm_mod,
             api_key=self.cfg.openrouter_api_key,
             base_url=self.cfg.openrouter_base_url,
-            temperature=self.cfg.temperature,
+            temperature=temp,
             timeout=self.cfg.request_timeout
         )
         self._graph = self._build_graph()
